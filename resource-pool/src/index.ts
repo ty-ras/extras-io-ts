@@ -7,7 +7,16 @@ export type {
   ResourceIdleTimeCustomizationFunction,
   ResourcePool,
   ResourcePoolAdministration,
+  ResourceAcquire,
+  ResourceIdleTimeCustomizationFunctionInput,
+  ResourceRelease,
 } from "./api";
 export * from "./factory";
-export type { ResourcePoolFullError } from "./errors";
-export { isResourcePoolFullError } from "./errors";
+export type {
+  ResourcePoolFullError,
+  ResourceNotPartOfPoolError,
+} from "./errors";
+export {
+  isResourcePoolFullError,
+  isResourceNotPartOfPoolError,
+} from "./errors";

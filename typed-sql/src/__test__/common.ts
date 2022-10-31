@@ -1,0 +1,36 @@
+import type * as input from "../input";
+import type * as parameters from "../parameters";
+import { either as E, taskEither as TE } from "fp-ts";
+
+export const createMockedClientProvider = (
+  returnValues: ReadonlyArray<Array<unknown>>,
+): {
+  seenParameters: SeenParameters;
+  usingMockedClient: input.SQLClientInformation<Error, LoggedQueries>;
+} => {
+  let returnValueIndex = 0;
+  const seenParameters: SeenParameters = [];
+  return {
+    seenParameters,
+    usingMockedClient: {
+      constructParameterReference: (index, parameter) => {
+        seenParameters.push({ index, parameter });
+        return `$${index + 1}`;
+      },
+      executeQuery: (client, query, parameters) => {
+        client.push({ query, parameters });
+        return TE.fromEither(E.right(returnValues[returnValueIndex++]));
+      },
+    },
+  };
+};
+
+export type LoggedQueries = Array<{
+  query: string;
+  parameters: Array<unknown>;
+}>;
+
+export type SeenParameters = Array<{
+  parameter: parameters.AnySQLParameter;
+  index: number;
+}>;

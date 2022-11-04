@@ -67,10 +67,10 @@ export function executeSQLQuery<
   };
 }
 
+// Tuple reducer spotted from https://stackoverflow.com/questions/69085499/typescript-convert-tuple-type-to-object
 export type SQLParameterReducer<
   Arr extends Array<unknown>,
   Result extends Record<string, unknown> = {},
-  Index extends number[] = [],
 > = Arr extends []
   ? Result
   : Arr extends [infer Head, ...infer Tail]
@@ -79,8 +79,7 @@ export type SQLParameterReducer<
       Result &
         (Head extends parameters.SQLParameter<infer TName, infer TValidation>
           ? Record<TName, t.TypeOf<TValidation>>
-          : {}),
-      [...Index, 1]
+          : {})
     >
   : Readonly<Result>;
 

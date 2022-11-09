@@ -127,8 +127,13 @@ const getParameterValidationAndNames = (
     (state, arg, idx) => {
       if (parameters.isSQLParameter(arg)) {
         const parameterName = arg.parameterName;
-        if (parameterName in state.props) {
-          throw new errors.DuplicateSQLParameterNameError(parameterName);
+        const existing = state.props[parameterName];
+        if (existing) {
+          if (arg.validation === existing) {
+            state.parameterInstances.push(arg);
+          } else {
+            throw new errors.DuplicateSQLParameterNameError(parameterName);
+          }
         } else {
           state.parameterInstances.push(arg);
           state.props[parameterName] = arg.validation;

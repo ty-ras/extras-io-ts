@@ -125,7 +125,7 @@ test("Validate that passing invalid parameters to executeSQLQuery throws correct
       spec.executeSQLQuery`SELECT ${parameters.parameter(
         "duplicate",
         t.string,
-      )}, ${parameters.parameter("duplicate", t.string)}`,
+      )}, ${parameters.parameter("duplicate", t.number)}`,
     {
       instanceOf: errors.DuplicateSQLParameterNameError,
     },
@@ -165,6 +165,44 @@ test("Validate that invalid query input parameters are detected", async (c) => {
       },
     ]);
     c.deepEqual(loggedQueries, []);
+    c.deepEqual(seenParameters, expectedSeenParameters);
+  }
+});
+
+test("Validate that duplicate parameters work ", async (c) => {
+  c.plan(4);
+  const mockQueryResult = ["returnedRow"];
+  const { seenParameters, usingMockedClient } =
+    common.createMockedClientProvider([mockQueryResult]);
+  const sameParameterReferencedTwice = parameters.parameter("param", t.string);
+  const executor = F.pipe(
+    usingMockedClient,
+    spec.executeSQLQuery`SELECT value FROM table WHERE one_property = ${sameParameterReferencedTwice} OR another_property = ${sameParameterReferencedTwice}`,
+  );
+  const expectedSeenParameters = [
+    {
+      parameter: sameParameterReferencedTwice,
+      index: 0,
+    },
+    {
+      parameter: sameParameterReferencedTwice,
+      index: 1,
+    },
+  ];
+  c.deepEqual(seenParameters, expectedSeenParameters);
+  const loggedQueries: common.LoggedQueries = [];
+  const result = await executor(loggedQueries, {
+    param: "something",
+  })();
+  if (E.isRight(result)) {
+    c.deepEqual(result.right, mockQueryResult);
+    c.deepEqual(loggedQueries, [
+      {
+        query:
+          "SELECT value FROM table WHERE one_property = $1 OR another_property = $2",
+        parameters: ["something", "something"],
+      },
+    ]);
     c.deepEqual(seenParameters, expectedSeenParameters);
   }
 });

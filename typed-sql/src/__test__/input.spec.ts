@@ -17,7 +17,7 @@ test("Validate that execution works for parameterless SQL", async (c) => {
   const executor = F.pipe(usingMockedClient, spec.executeSQLQuery`SELECT 1`);
   c.deepEqual(seenParameters, []);
   const loggedQueries: common.LoggedQueries = [];
-  const result = await executor(loggedQueries)();
+  const result = await executor()(loggedQueries)();
   if (E.isRight(result)) {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
@@ -41,7 +41,7 @@ test("Validate that execution works for SQL with raw SQL string fragments", asyn
   );
   c.deepEqual(seenParameters, []);
   const loggedQueries: common.LoggedQueries = [];
-  const result = await executor(loggedQueries)();
+  const result = await executor()(loggedQueries)();
   if (E.isRight(result)) {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
@@ -72,7 +72,7 @@ test("Validate that execution works for SQL with parameters", async (c) => {
   ];
   c.deepEqual(seenParameters, expectedSeenParameters);
   const loggedQueries: common.LoggedQueries = [];
-  const result = await executor(loggedQueries, { id: "id" })();
+  const result = await executor({ id: "id" })(loggedQueries)();
   if (E.isRight(result)) {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
@@ -105,7 +105,7 @@ test("Validate that execution works for SQL with raw fragments and parameters mi
   ];
   c.deepEqual(seenParameters, expectedSeenParameters);
   const loggedQueries: common.LoggedQueries = [];
-  const result = await executor(loggedQueries, { id: "id" })();
+  const result = await executor({ id: "id" })(loggedQueries)();
   if (E.isRight(result)) {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
@@ -153,7 +153,7 @@ test("Validate that invalid query input parameters are detected", async (c) => {
   ];
   c.deepEqual(seenParameters, expectedSeenParameters);
   const loggedQueries: common.LoggedQueries = [];
-  const result = await executor(loggedQueries, "garbage" as any)();
+  const result = await executor("garbage" as any)(loggedQueries)();
   if (E.isLeft(result)) {
     // We can't access the query validation, therefore we delete ref to it
     delete (result.left as any)[0].context[0]["type"];
@@ -191,9 +191,9 @@ test("Validate that duplicate parameters work ", async (c) => {
   ];
   c.deepEqual(seenParameters, expectedSeenParameters);
   const loggedQueries: common.LoggedQueries = [];
-  const result = await executor(loggedQueries, {
+  const result = await executor({
     param: "something",
-  })();
+  })(loggedQueries)();
   if (E.isRight(result)) {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [

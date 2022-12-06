@@ -92,7 +92,7 @@ test("Validate that validateRows invokes given validation", async (c) => {
     spec.validateRows(spec.one(t.string)),
   );
   // First invocation passes, because first mocked query result only contains one row
-  c.true(E.isRight(await executor([])()));
+  c.true(E.isRight(await executor()([])()));
   // Second invocation should not pass, because second mocked query result contains two rows
-  c.true(E.isLeft(await executor([])()));
+  c.true(E.isLeft(await executor()([])()));
 });

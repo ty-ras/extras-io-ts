@@ -39,31 +39,39 @@ export function executeSQLQuery<
       return thisFragment;
     });
 
-    return (client, queryParameters) => {
-      const validationResult = parameterValidation.decode(queryParameters);
-      return F.pipe(
-        // We have to do this silly thing instead of directly calling TE.fromEither(parameterValidation.decode) because TS compiler doesn't properly combine
-        // Right<X> | Right<Y> into Right<X|Y>
-        TE.fromEither(
-          validationResult._tag === "Right"
-            ? E.right(validationResult.right)
-            : validationResult,
-        ),
-        TE.chainW((validatedParameters) =>
-          executeQuery(
-            client,
-            queryString,
-            parameterNames.map(
-              (parameterName) =>
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-                validatedParameters[
-                  parameterName as keyof typeof validatedParameters
-                ],
+    // It is possible to do this also via Object.assign
+    // https://stackoverflow.com/questions/12766528/build-a-function-object-with-properties-in-typescript
+    // However, I think this way is nicer.
+    // It is from https://bobbyhadz.com/blog/typescript-assign-property-to-function
+    function executor(queryParameters: void | SQLParameterReducer<TArgs>) {
+      return (client: Parameters<typeof executeQuery>[0]) => {
+        const validationResult = parameterValidation.decode(queryParameters);
+        return F.pipe(
+          // We have to do this silly thing instead of directly calling TE.fromEither(parameterValidation.decode) because TS compiler doesn't properly combine
+          // Right<X> | Right<Y> into Right<X|Y>
+          TE.fromEither(
+            validationResult._tag === "Right"
+              ? E.right(validationResult.right)
+              : validationResult,
+          ),
+          TE.chainW((validatedParameters) =>
+            executeQuery(
+              client,
+              queryString,
+              parameterNames.map(
+                (parameterName) =>
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                  validatedParameters[
+                    parameterName as keyof typeof validatedParameters
+                  ],
+              ),
             ),
           ),
-        ),
-      );
-    };
+        );
+      };
+    }
+    executor.queryString = queryString;
+    return executor;
   };
 }
 
@@ -99,10 +107,22 @@ export interface SQLClientInformation<TError, TClient> {
   ) => TE.TaskEither<TError, Array<unknown>>;
 }
 
-export type SQLQueryExecutor<TError, TClient, TParameters, TReturnType> = (
-  client: TClient,
+export type SQLQueryExecutor<TError, TClient, TParameters, TReturnType> =
+  SQLQueryExecutorFunction<TError, TClient, TParameters, TReturnType> &
+    SQLExecutorQueryString;
+
+export interface SQLExecutorQueryString {
+  readonly queryString: string;
+}
+
+export type SQLQueryExecutorFunction<
+  TError,
+  TClient,
+  TParameters,
+  TReturnType,
+> = (
   parameters: TParameters,
-) => TE.TaskEither<TError, TReturnType>;
+) => (client: TClient) => TE.TaskEither<TError, TReturnType>;
 
 const constructTemplateString = <T>(
   fragments: TemplateStringsArray,

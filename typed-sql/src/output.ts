@@ -45,9 +45,37 @@ export const validateRows =
     TParameters,
     t.TypeOf<TValidation>
   >) =>
-  (executor) =>
-  (client, parameters) =>
-    F.pipe(
-      executor(client, parameters),
-      TE.chainW((rows) => TE.fromEither(validation.decode(rows))),
-    );
+  (executor) => {
+    function retVal(parameters: ParametersOf<typeof executor>) {
+      return (client: ClientOf<typeof executor>) =>
+        F.pipe(
+          client,
+          executor(parameters),
+          TE.chainW((rows) => TE.fromEither(validation.decode(rows))),
+        );
+    }
+    retVal.queryString = executor.queryString;
+    return retVal;
+  };
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+type ParametersOf<
+  TExecutor extends query.SQLQueryExecutor<any, any, any, any>,
+> = TExecutor extends query.SQLQueryExecutor<
+  infer _0,
+  infer _1,
+  infer TParameters,
+  infer _2
+>
+  ? TParameters
+  : never;
+
+type ClientOf<TExecutor extends query.SQLQueryExecutor<any, any, any, any>> =
+  TExecutor extends query.SQLQueryExecutor<
+    infer _0,
+    infer TClient,
+    infer _1,
+    infer _2
+  >
+    ? TClient
+    : never;

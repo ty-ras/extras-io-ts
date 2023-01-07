@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import * as t from "io-ts";
-import { function as F, either as E, taskEither as TE } from "fp-ts";
+import { function as F, taskEither as TE } from "fp-ts";
 import * as parameters from "./parameters";
 import * as errors from "./errors";
 
@@ -24,15 +24,24 @@ export function executeSQLQuery<
   template: TemplateStringsArray,
   ...args: TArgs
 ): SQLQueryInformation<void | SQLParameterReducer<TArgs>> {
-  const { parameterValidation, parameterNames } =
-    getParameterValidationAndNames(args);
+  const {
+    parameterValidation,
+    parameterNames,
+    templateIndicesToParameterIndices,
+  } = getParameterValidationAndNames(args);
 
   return ({ constructParameterReference, executeQuery }) => {
-    let parameterIdx = 0;
-    const queryString = constructTemplateString(template, args, (arg) => {
+    const queryString = constructTemplateString(template, args, (argIdx) => {
       let thisFragment: string;
+      const arg = args[argIdx];
       if (parameters.isSQLParameter(arg)) {
-        thisFragment = constructParameterReference(parameterIdx++, arg);
+        const parameterIndex = templateIndicesToParameterIndices[argIdx];
+        if (parameterIndex === undefined) {
+          throw new Error(
+            `Internal error: parameter index for template arg at ${argIdx} was not defined when it should've been.`,
+          );
+        }
+        thisFragment = constructParameterReference(parameterIndex, arg);
       } else {
         thisFragment = arg.rawSQL;
       }
@@ -45,14 +54,11 @@ export function executeSQLQuery<
     // It is from https://bobbyhadz.com/blog/typescript-assign-property-to-function
     function executor(queryParameters: void | SQLParameterReducer<TArgs>) {
       return (client: Parameters<typeof executeQuery>[0]) => {
-        const validationResult = parameterValidation.decode(queryParameters);
+        // We have to do explicit typing because TS compiler doesn't properly combine
+        // Right<X> | Right<Y> into Right<X|Y>
         return F.pipe(
-          // We have to do this silly thing instead of directly calling TE.fromEither(parameterValidation.decode) because TS compiler doesn't properly combine
-          // Right<X> | Right<Y> into Right<X|Y>
-          TE.fromEither(
-            validationResult._tag === "Right"
-              ? E.right(validationResult.right)
-              : validationResult,
+          TE.fromEither<t.Errors, void | { [x: string]: unknown }>(
+            parameterValidation.decode(queryParameters),
           ),
           TE.chainW((validatedParameters) =>
             executeQuery(
@@ -60,7 +66,6 @@ export function executeSQLQuery<
               queryString,
               parameterNames.map(
                 (parameterName) =>
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                   validatedParameters[
                     parameterName as keyof typeof validatedParameters
                   ],
@@ -70,7 +75,7 @@ export function executeSQLQuery<
         );
       };
     }
-    executor.queryString = queryString;
+    executor.sqlString = queryString;
     return executor;
   };
 }
@@ -109,10 +114,10 @@ export interface SQLClientInformation<TError, TClient> {
 
 export type SQLQueryExecutor<TError, TClient, TParameters, TReturnType> =
   SQLQueryExecutorFunction<TError, TClient, TParameters, TReturnType> &
-    SQLExecutorQueryString;
+    WithSQLString;
 
-export interface SQLExecutorQueryString {
-  readonly queryString: string;
+export interface WithSQLString {
+  readonly sqlString: string;
 }
 
 export type SQLQueryExecutorFunction<
@@ -127,12 +132,12 @@ export type SQLQueryExecutorFunction<
 const constructTemplateString = <T>(
   fragments: TemplateStringsArray,
   args: ReadonlyArray<T>,
-  transformArg: (arg: T, fragment: string) => string,
+  transformArg: (idx: number, fragment: string) => string,
 ) =>
   fragments.reduce(
     (curString, fragment, idx) =>
       `${curString}${fragment}${
-        idx >= args.length ? "" : transformArg(args[idx], fragment)
+        idx >= args.length ? "" : transformArg(idx, fragment)
       }`,
     "",
   );
@@ -140,35 +145,48 @@ const constructTemplateString = <T>(
 const getParameterValidationAndNames = (
   args: ReadonlyArray<parameters.SQLTemplateParameter>,
 ) => {
-  const { parameterInstances, props } = args.reduce<{
-    parameterInstances: Array<parameters.SQLParameter<string, t.Mixed>>;
-    props: t.Props;
-  }>(
-    (state, arg, idx) => {
-      if (parameters.isSQLParameter(arg)) {
-        const parameterName = arg.parameterName;
-        const existing = state.props[parameterName];
-        if (existing) {
-          if (arg.validation === existing) {
-            state.parameterInstances.push(arg);
+  const { parameterInstances, props, templateIndicesToParameterIndices } =
+    args.reduce<{
+      parameterInstances: Array<parameters.SQLParameter<string, t.Mixed>>;
+      props: t.Props;
+      templateIndicesToParameterIndices: Array<number | undefined>;
+      namesToIndices: Record<string, number>;
+    }>(
+      (state, arg, idx) => {
+        let paramIdx: number | undefined;
+        if (parameters.isSQLParameter(arg)) {
+          const parameterName = arg.parameterName;
+          const existing = state.props[parameterName];
+          if (existing) {
+            if (arg.validation === existing) {
+              paramIdx = state.namesToIndices[parameterName];
+            } else {
+              throw new errors.DuplicateSQLParameterNameError(parameterName);
+            }
           } else {
-            throw new errors.DuplicateSQLParameterNameError(parameterName);
+            paramIdx = state.parameterInstances.length;
+            state.parameterInstances.push(arg);
+            state.namesToIndices[parameterName] = paramIdx;
+            state.props[parameterName] = arg.validation;
           }
-        } else {
-          state.parameterInstances.push(arg);
-          state.props[parameterName] = arg.validation;
+        } else if (!parameters.isRawSQL(arg)) {
+          throw new errors.InvalidSQLTemplateArgumentError(idx);
         }
-      } else if (!parameters.isRawSQL(arg)) {
-        throw new errors.InvalidSQLTemplateArgumentError(idx);
-      }
-      return state;
-    },
-    { parameterInstances: [], props: {} },
-  );
+        state.templateIndicesToParameterIndices.push(paramIdx);
+        return state;
+      },
+      {
+        parameterInstances: [],
+        props: {},
+        templateIndicesToParameterIndices: [],
+        namesToIndices: {},
+      },
+    );
   const parameterValidation =
     parameterInstances.length > 0 ? t.type(props, "SQLParameters") : t.void;
   return {
     parameterValidation,
     parameterNames: parameterInstances.map((p) => p.parameterName),
+    templateIndicesToParameterIndices,
   };
 };

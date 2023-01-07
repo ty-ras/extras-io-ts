@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -10,11 +11,13 @@ import * as t from "io-ts";
 import * as common from "./common";
 
 test("Validate that execution works for parameterless SQL", async (c) => {
-  c.plan(4);
+  c.plan(5);
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
   const executor = F.pipe(usingMockedClient, spec.executeSQLQuery`SELECT 1`);
+  const expectedSQLString = "SELECT 1";
+  c.deepEqual(executor.sqlString, expectedSQLString);
   c.deepEqual(seenParameters, []);
   const loggedQueries: common.LoggedQueries = [];
   const result = await executor()(loggedQueries)();
@@ -22,7 +25,7 @@ test("Validate that execution works for parameterless SQL", async (c) => {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
       {
-        query: "SELECT 1",
+        query: expectedSQLString,
         parameters: [],
       },
     ]);
@@ -31,7 +34,7 @@ test("Validate that execution works for parameterless SQL", async (c) => {
 });
 
 test("Validate that execution works for SQL with raw SQL string fragments", async (c) => {
-  c.plan(4);
+  c.plan(5);
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
@@ -39,6 +42,8 @@ test("Validate that execution works for SQL with raw SQL string fragments", asyn
     usingMockedClient,
     spec.executeSQLQuery`SELECT ${parameters.raw("1")}`,
   );
+  const expectedSQLString = "SELECT 1";
+  c.deepEqual(executor.sqlString, expectedSQLString);
   c.deepEqual(seenParameters, []);
   const loggedQueries: common.LoggedQueries = [];
   const result = await executor()(loggedQueries)();
@@ -55,7 +60,7 @@ test("Validate that execution works for SQL with raw SQL string fragments", asyn
 });
 
 test("Validate that execution works for SQL with parameters", async (c) => {
-  c.plan(4);
+  c.plan(5);
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
@@ -64,6 +69,9 @@ test("Validate that execution works for SQL with parameters", async (c) => {
     usingMockedClient,
     spec.executeSQLQuery`SELECT payload FROM things WHERE id = ${idParameter}`,
   );
+
+  const expectedSQLString = "SELECT payload FROM things WHERE id = $1";
+  c.deepEqual(executor.sqlString, expectedSQLString);
   const expectedSeenParameters = [
     {
       parameter: idParameter,
@@ -77,7 +85,7 @@ test("Validate that execution works for SQL with parameters", async (c) => {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
       {
-        query: "SELECT payload FROM things WHERE id = $1",
+        query: expectedSQLString,
         parameters: ["id"],
       },
     ]);
@@ -86,7 +94,7 @@ test("Validate that execution works for SQL with parameters", async (c) => {
 });
 
 test("Validate that execution works for SQL with raw fragments and parameters mixed", async (c) => {
-  c.plan(4);
+  c.plan(5);
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
@@ -97,6 +105,8 @@ test("Validate that execution works for SQL with raw fragments and parameters mi
       "payload",
     )} FROM things WHERE id = ${idParameter}`,
   );
+  const expectedSQLString = "SELECT payload FROM things WHERE id = $1";
+  c.deepEqual(executor.sqlString, expectedSQLString);
   const expectedSeenParameters = [
     {
       parameter: idParameter,
@@ -110,7 +120,7 @@ test("Validate that execution works for SQL with raw fragments and parameters mi
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
       {
-        query: "SELECT payload FROM things WHERE id = $1",
+        query: expectedSQLString,
         parameters: ["id"],
       },
     ]);
@@ -136,7 +146,7 @@ test("Validate that passing invalid parameters to executeSQLQuery throws correct
 });
 
 test("Validate that invalid query input parameters are detected", async (c) => {
-  c.plan(4);
+  c.plan(5);
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
@@ -145,6 +155,7 @@ test("Validate that invalid query input parameters are detected", async (c) => {
     usingMockedClient,
     spec.executeSQLQuery`SELECT payload FROM things WHERE id = ${idParameter}`,
   );
+  c.deepEqual(executor.sqlString, "SELECT payload FROM things WHERE id = $1");
   const expectedSeenParameters = [
     {
       parameter: idParameter,
@@ -170,7 +181,7 @@ test("Validate that invalid query input parameters are detected", async (c) => {
 });
 
 test("Validate that duplicate parameters work ", async (c) => {
-  c.plan(4);
+  c.plan(5);
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
@@ -179,6 +190,9 @@ test("Validate that duplicate parameters work ", async (c) => {
     usingMockedClient,
     spec.executeSQLQuery`SELECT value FROM table WHERE one_property = ${sameParameterReferencedTwice} OR another_property = ${sameParameterReferencedTwice}`,
   );
+  const expectedSQLString =
+    "SELECT value FROM table WHERE one_property = $1 OR another_property = $1";
+  c.deepEqual(executor.sqlString, expectedSQLString);
   const expectedSeenParameters = [
     {
       parameter: sameParameterReferencedTwice,
@@ -186,7 +200,7 @@ test("Validate that duplicate parameters work ", async (c) => {
     },
     {
       parameter: sameParameterReferencedTwice,
-      index: 1,
+      index: 0,
     },
   ];
   c.deepEqual(seenParameters, expectedSeenParameters);
@@ -198,9 +212,8 @@ test("Validate that duplicate parameters work ", async (c) => {
     c.deepEqual(result.right, mockQueryResult);
     c.deepEqual(loggedQueries, [
       {
-        query:
-          "SELECT value FROM table WHERE one_property = $1 OR another_property = $2",
-        parameters: ["something", "something"],
+        query: expectedSQLString,
+        parameters: ["something"],
       },
     ]);
     c.deepEqual(seenParameters, expectedSeenParameters);

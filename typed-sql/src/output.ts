@@ -54,7 +54,7 @@ export const validateRows =
           TE.chainW((rows) => TE.fromEither(validation.decode(rows))),
         );
     }
-    retVal.queryString = executor.queryString;
+    retVal.sqlString = executor.sqlString;
     return retVal;
   };
 

@@ -1,6 +1,6 @@
 {
-  "name": "@ty-ras/resource-pool-fp-ts",
-  "version": "0.12.0",
+  "name": "@ty-ras-extras/resource-pool-fp-ts",
+  "version": "0.13.0",
   "author": {
     "name": "Stanislav Muhametsin",
     "email": "346799+stazz@users.noreply.github.com",
@@ -10,7 +10,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ty-ras/io-ts"
+    "url": "https://github.com/ty-ras/extras-io-ts"
   },
   "files": [
     "./src",

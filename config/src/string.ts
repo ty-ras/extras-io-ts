@@ -13,6 +13,18 @@ export const validateFromMaybeStringifiedJSON =
       E.chain(validateFromStringifiedJSON(validation)),
     );
 
+export const validateFromMaybeStringifiedJSONOrThrow = <
+  TValidation extends t.Mixed,
+>(
+  validation: TValidation,
+) =>
+  F.flow(
+    validateFromMaybeStringifiedJSON(validation),
+    E.getOrElse<Error | t.Errors, t.TypeOf<TValidation>>((e) => {
+      throw new Error(`Configuration was invalid: ${e}`);
+    }),
+  );
+
 export const validateFromStringifiedJSON =
   <TValidation extends t.Mixed>(validation: TValidation) =>
   (

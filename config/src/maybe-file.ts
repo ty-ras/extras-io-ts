@@ -31,7 +31,7 @@ export const getJSONStringValueFromStringWhichIsJSONOrFilename = (
 
 type ConfigStringType = { type: "JSON" | "file"; str: string };
 
-const JSON_STARTS_REGEX = /^\W(\{|\[|"|t|f|\d|-|n)/;
+const JSON_STARTS_REGEX = /^\W*(\{|\[|"|t|f|\d|-|n)/;
 
 const FILE_STARTS = [".", "/"];
 

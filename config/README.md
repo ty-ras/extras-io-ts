@@ -10,8 +10,8 @@ The strings are parsed as necessary and then validated at runtime using [`io-ts`
 ```ts
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
-import { tyrasConfig } from "@ty-ras-extras/frontend-io-ts";
-// Or, if not using bundled libraries: import * as tyrasConfig from "@ty-ras-extras/config/string";
+import { configuration } from "@ty-ras-extras/frontend-io-ts";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config/string";
 
 // Define runtime validation of configuration
 const validation = t.type({
@@ -20,7 +20,7 @@ const validation = t.type({
 // Acquire configuration
 export const config = F.pipe(
   import.meta.env["MY_FE_CONFIG"], // Or, if webpack: process.env["MY_FE_CONFIG"],
-  tyrasConfig.validateFromStringifiedJSONOrThrow(validation),
+  configuration.validateFromStringifiedJSONOrThrow(validation),
 );
 // The compile-time type of 'config' is now:
 // {
@@ -33,8 +33,8 @@ For situations where environment variable is always serialized JSON:
 ```ts
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
-import { tyrasConfig } from "@ty-ras-extras/backend-io-ts";
-// Or, if not using bundled libraries: import * as tyrasConfig from "@ty-ras-extras/config/string";
+import { configuration } from "@ty-ras-extras/backend-io-ts";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config/string";
 
 // Define runtime validation of configuration
 const validation = t.type({
@@ -43,7 +43,7 @@ const validation = t.type({
 // Acquire configuration
 export const config = F.pipe(
   process.env["MY_BE_CONFIG"],
-  tyrasConfig.validateFromStringifiedJSONOrThrow(validation),
+  configuration.validateFromStringifiedJSONOrThrow(validation),
 );
 // The compile-time type of 'config' is now:
 // {
@@ -55,21 +55,21 @@ For situations where environment variable is either serialized JSON or a path to
 ```ts
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
-import { tyrasConfig } from "@ty-ras-extras/backend-io-ts";
-// Or, if not using bundled libraries: import * as tyrasConfig from "@ty-ras-extras/config/all";
+import { configuration } from "@ty-ras-extras/backend-io-ts";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config/all";
 
 // Define runtime validation of configuration
 const validation = t.type({
   someStringProperty: t.string,
 });
 // Acquire configuration
-export const config = F.pipe(
+export const acquireConfiguration = async () => await F.pipe(
   process.env["MY_BE_CONFIG"],
-  tyrasConfig.getJSONStringValueFromStringWhichIsJSONOrFilename(validation),
-  tyrasConfig.validateFromStringifiedJSONOrThrow(validation)
+  configuration.getJSONStringValueFromStringWhichIsJSONOrFilename(validation),
+  configuration.validateFromStringifiedJSONOrThrow(validation)
 );
-// The compile-time type of 'config' is now:
-// {
+// The compile-time type of 'acquireConfiguration' is now:
+// () => Promise<{
 //   someStringProperty: string
-// }
+// }>
 ```

@@ -1,7 +1,7 @@
-# Typesafe REST API Specification - IO-TS Generic Libraries
+# Typesafe REST API Specification - IO-TS Extras Libraries
 
-[![CI Pipeline](https://github.com/ty-ras/extras-io-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/extras-ty-ras/io-ts/actions/workflows/ci.yml)
-[![CD Pipeline](https://github.com/ty-ras/extras-io-ts/actions/workflows/cd.yml/badge.svg)](https://github.com/extras-ty-ras/io-ts/actions/workflows/cd.yml)
+[![CI Pipeline](https://github.com/ty-ras/extras-io-ts/actions/workflows/ci.yml/badge.svg)](https://github.com/ty-ras/extras-io-ts/actions/workflows/ci.yml)
+[![CD Pipeline](https://github.com/ty-ras/extras-io-ts/actions/workflows/cd.yml/badge.svg)](https://github.com/ty-ras/extras-io-ts/actions/workflows/cd.yml)
 
 The Typesafe REST API Specification is a family of libraries used to enable seamless development of Backend and/or Frontend which communicate via HTTP protocol.
 The protocol specification is checked both at compile-time and run-time to verify that communication indeed adhers to the protocol.

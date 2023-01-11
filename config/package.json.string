@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "main": "../dist-cjs/string.js",
+  "module": "../dist-esm/string.js",
+  "types": "../dist-ts/string.d.ts"
+}

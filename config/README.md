@@ -34,7 +34,7 @@ For situations where environment variable is always serialized JSON:
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
 import { configuration } from "@ty-ras-extras/backend-io-ts";
-// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config/string";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config";
 
 // Define runtime validation of configuration
 const validation = t.type({
@@ -56,7 +56,7 @@ For situations where environment variable is either serialized JSON or a path to
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
 import { configuration } from "@ty-ras-extras/backend-io-ts";
-// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config/all";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config";
 
 // Define runtime validation of configuration
 const validation = t.type({

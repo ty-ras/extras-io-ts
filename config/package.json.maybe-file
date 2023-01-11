@@ -1,0 +1,6 @@
+{
+  "type": "module",
+  "main": "../dist-cjs/maybe-file.js",
+  "module": "../dist-esm/maybe-file.js",
+  "types": "../dist-ts/maybe-file.d.ts"
+}

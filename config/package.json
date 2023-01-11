@@ -1,6 +1,6 @@
 {
   "name": "@ty-ras-extras/config-io-ts",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "author": {
     "name": "Stanislav Muhametsin",
     "email": "346799+stazz@users.noreply.github.com",
@@ -18,7 +18,9 @@
     "./dist-esm",
     "./dist-cjs",
     "README.md",
-    "LICENSE.txt"
+    "LICENSE.txt",
+    "string/package.json",
+    "maybe-file/package.json"
   ],
   "type": "module",
   "main": "./dist-cjs/index.js",

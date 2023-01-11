@@ -32,9 +32,9 @@ export interface StatePropertyMatchSpecOneOf<T> {
 }
 export interface StatePropertyMatchSpecAllOf<T> {
   match: typeof MATCH_ALL_OF;
-  values: ReadonlyArray<T>;
+  values: T extends Array<infer U> ? ReadonlyArray<U> : never;
 }
 
 export const MATCH_EXACT = "exact";
-export const MATCH_ONE_OF = "one_of";
-export const MATCH_ALL_OF = "all_of";
+export const MATCH_ONE_OF = "oneOf";
+export const MATCH_ALL_OF = "allOf";

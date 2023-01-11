@@ -6,7 +6,7 @@
     "email": "346799+stazz@users.noreply.github.com",
     "url": "https://github.com/stazz"
   },
-  "description": "Handle TyRAS state callbacks in typical way with `io-ts`.",
+  "description": "Handle TyRAS state provider callbacks in typical way with `io-ts`.",
   "license": "MIT",
   "repository": {
     "type": "git",

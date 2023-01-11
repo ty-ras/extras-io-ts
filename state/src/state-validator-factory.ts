@@ -21,32 +21,37 @@ export const createStateValidatorFactory =
     const getValidator = (
       ...[propName, propSpec]: typeof entries[number]
     ): t.Mixed => {
+      const statePropValidation =
+        validation[propName]?.validation ??
+        // String(...) call is because:
+        // Implicit conversion of a 'symbol' to a 'string' will fail at runtime. Consider wrapping this expression in 'String(...)'.
+        doThrow(`State does not contain "${String(propName)}".`);
+
       if (typeof propSpec === "boolean") {
         // For booleans, simply return the property validator.
         // It will be part of 'type' or 'partial'.
-        return (
-          validation[propName]?.validation ??
-          // String(...) call is because:
-          // Implicit conversion of a 'symbol' to a 'string' will fail at runtime. Consider wrapping this expression in 'String(...)'.
-          doThrow(`State does not contain "${String(propName)}".`)
-        );
+        return statePropValidation;
       } else {
         // For more complex spec, see what is being specified and return validation based on that.
         switch (propSpec.match) {
           case spec.MATCH_EXACT: {
             const matched = propSpec.value;
-            return t.refinement(t.unknown, (v) => v === matched);
+            return t.refinement(statePropValidation, (v) => v === matched);
           }
           case spec.MATCH_ONE_OF: {
             const oneOf = propSpec.values;
-            return t.refinement(t.UnknownArray, (arr) =>
-              oneOf.some((one) => arr.some((v) => v === one)),
+            return t.refinement(statePropValidation, (val) =>
+              oneOf.some((one) => val === one),
             );
           }
           case spec.MATCH_ALL_OF: {
-            const allOf = propSpec.values;
-            return t.refinement(t.UnknownArray, (arr) =>
-              allOf.every((one) => arr.some((v) => v === one)),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const allOf = propSpec.values as Array<any>;
+            return t.refinement(
+              statePropValidation,
+              (arr) =>
+                Array.isArray(arr) &&
+                allOf.every((one) => arr.some((v) => v === one)),
             );
           }
         }

@@ -2,26 +2,24 @@ import * as t from "io-ts";
 import { function as F, either as E } from "fp-ts";
 import type * as tyrasEP from "@ty-ras/endpoint";
 import * as tyras from "@ty-ras/data-io-ts";
+import * as tyrasData from "@ty-ras/data";
 
 export const createStateValidatorFactory =
   <TStateValidation extends TStateValidationBase>(
     validation: TStateValidation,
   ) =>
-  <
-    TStateSpec extends StateSpec<{
-      [K in keyof TStateValidation]: t.TypeOf<
-        TStateValidation[K]["validation"]
-      >;
-    }>,
-  >(
+  <TStateSpec extends StateSpec<TStateValidation>>(
     spec: TStateSpec,
   ): tyrasEP.EndpointStateValidator<
-    StateInfoOfKeys<keyof TStateValidation>,
+    StateInfoOfKeys<keyof TStateSpec>,
     GetState<TStateValidation, TStateSpec>
     // eslint-disable-next-line sonarjs/cognitive-complexity
   > => {
     const entries = Object.entries(spec) as Array<
-      [keyof TStateValidation, StatePropertySpec<TStateSpec[keyof TStateSpec]>]
+      [
+        keyof TStateSpec & keyof TStateValidation,
+        StatePropertySpec<TStateValidation>,
+      ]
     >;
     const getValidator = (
       ...[propName, propSpec]: typeof entries[number]
@@ -30,7 +28,7 @@ export const createStateValidatorFactory =
         // For booleans, simply return the property validator.
         // It will be part of 'type' or 'partial'.
         return (
-          validation[propName].validation ??
+          validation[propName]?.validation ??
           // String(...) call is because:
           // Implicit conversion of a 'symbol' to a 'string' will fail at runtime. Consider wrapping this expression in 'String(...)'.
           doThrow(`State does not contain "${String(propName)}".`)
@@ -74,7 +72,7 @@ export const createStateValidatorFactory =
             .filter(([, propSpec]) => propSpec === false)
             .map(([propName]) => [
               propName,
-              validation[propName].validation ??
+              validation[propName]?.validation ??
                 doThrow(`State does not contain "${String(propName)}".`),
             ]),
         ),
@@ -118,17 +116,47 @@ export const createStateValidatorFactory =
     };
   };
 
-export type TStateValidationBase = Record<
-  string,
-  { validation: t.Mixed; isAuthenticationProperty: boolean }
->;
+export const getFullStateValidationInfo = <
+  TAuthenticated extends Record<string, t.Mixed>,
+  TOther extends Record<string, t.Mixed>,
+>(
+  authenticated: TAuthenticated,
+  other: TOther,
+) =>
+  ({
+    ...tyrasData.transformEntries(authenticated, (validation) => ({
+      validation,
+      isAuthenticationProperty: true,
+    })),
+    ...tyrasData.transformEntries(other, (validation) => ({
+      validation,
+      isAuthenticationProperty: false,
+    })),
+  } as {
+    [P in keyof TAuthenticated]: StatePropertyValidation<
+      TAuthenticated[P],
+      true
+    >;
+  } & { [P in keyof TOther]: StatePropertyValidation<TOther[P], false> });
+
+export type TStateValidationBase = Record<string, StatePropertyValidation>;
+
+export interface StatePropertyValidation<
+  TValidation extends t.Mixed = t.Mixed,
+  TIsAuthentication extends boolean = boolean,
+> {
+  validation: TValidation;
+  isAuthenticationProperty: TIsAuthentication;
+}
 
 export type StateInfo<TState> = StateInfoOfKeys<keyof TState>;
 export type StateInfoOfKeys<TKeys extends PropertyKey> = ReadonlyArray<TKeys>;
 
-export type StateSpec<TState extends object> = Partial<{
-  readonly [P in keyof TState]: StatePropertySpec<TState[P]>;
-}>;
+export type StateSpec<TStateValidation extends TStateValidationBase> = {
+  readonly [P in string]: keyof TStateValidation extends P
+    ? StatePropertySpec<t.TypeOf<TStateValidation[P]["validation"]>>
+    : never;
+};
 export type StatePropertySpec<T> = T extends boolean
   ? // Only allow match specs
     StatePropertyMatchSpec<T>
@@ -173,6 +201,9 @@ export type GetState<
     TStateValidation[P]["validation"]
   >;
 };
+
+export type GetFullState<TStateValidation extends TStateValidationBase> =
+  GetState<TStateValidation, { [P in keyof TStateValidation]: true }>;
 
 export type NonOptionalStateKeys<T> = {
   [P in keyof T]-?: false extends T[P] ? never : P;

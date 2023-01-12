@@ -19,20 +19,20 @@ export function invokeMain<TError, TResult>(
  *
  * Notice that given callback is inside `try` block so even if it actually `throw`s instead of returning `Left`, that will be catched and interpreted as `Left`.
  * @param getMainTask The callback to get `TaskEither` to execute.
- * @param skipExitingAlways Set to `false` in order to skip calling `process.exit` on successful invocations (result is `Right`).
+ * @param dontCallProcessExit Set to `true` in order to skip calling `process.exit` on successful invocations (result is `Right`).
  */
 export function invokeMain<E, T>(
   getMainTask: F.Lazy<TE.TaskEither<E, T>>,
-  skipExitingAlways: false,
+  dontCallProcessExit: true,
 ): Promise<1 | 0>;
 /* c8 ignore start */
 export async function invokeMain<E, T>(
   getMainTask: F.Lazy<TE.TaskEither<E, T>>,
-  skipExitingAlways: false = false,
+  dontCallProcessExit?: boolean,
 ): Promise<void | 1 | 0> {
   const { callProcessExit, exitCode } = await invokeMainAndGetInfo(
     getMainTask,
-    skipExitingAlways,
+    dontCallProcessExit,
   );
   if (callProcessExit) {
     process.exit(exitCode);
@@ -46,12 +46,12 @@ export async function invokeMain<E, T>(
  *
  * Notice that given callback is inside `try` block so even if it actually `throw`s instead of returning `Left`, that will be catched and interpreted as `Left`.
  * @param getMainTask The callback to get `TaskEither` to execute.
- * @param skipExitingAlways Set to `false` in order to result `callProcessExit` to be `false` even when there are no errors.
+ * @param dontCallProcessExit Set to `true` in order to result `callProcessExit` to be `false` even when there are no errors.
  * @returns Information used by {@link invokeMain}
  */
 export const invokeMainAndGetInfo = async <TError, TResult>(
   getMainTask: F.Lazy<TE.TaskEither<TError, TResult>>,
-  skipExitingAlways?: false,
+  dontCallProcessExit?: boolean,
 ) => {
   let exitCode: 1 | 0 = 1;
   try {
@@ -66,7 +66,7 @@ export const invokeMainAndGetInfo = async <TError, TResult>(
     console.error("Error", e);
   }
   return {
-    callProcessExit: skipExitingAlways !== false || exitCode !== 0,
+    callProcessExit: dontCallProcessExit !== true || exitCode !== 0,
     exitCode,
   };
 };

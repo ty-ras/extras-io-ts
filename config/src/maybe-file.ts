@@ -7,15 +7,14 @@ import * as fs from "fs/promises";
  * @param stringValue String value which will be interpreted as inline JSON or path to file containing JSON.
  * @returns A task which either contains error, or string.
  */
-export const getJSONStringValueFromStringWhichIsJSONOrFilename = (
+export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilename = (
   stringValue: string,
-): TE.TaskEither<Error | t.Errors, string> =>
+): TE.TaskEither<Error, string> =>
   F.pipe(
-    // Check that it is actually non-empty string.
-    nonEmptyString.decode(stringValue),
+    stringValue,
     // Check the string contents - should we treat it as JSON string or path to file?
     // We use chainW instead of map because we return Either, and chainW = map + flatten (+ 'W'iden types)
-    E.chainW(extractConfigStringType),
+    extractConfigStringType,
     // We may need to use async now (in case of file path), so lift Either into TaskEither (Promisified version of Either)
     TE.fromEither,
     // Invoke async callback
@@ -28,6 +27,23 @@ export const getJSONStringValueFromStringWhichIsJSONOrFilename = (
       ),
     ),
   );
+
+export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar =
+  (envVarName: string) =>
+  (maybeString: unknown): TE.TaskEither<Error, string> =>
+    F.pipe(
+      // Check that it is actually non-empty string.
+      nonEmptyString.decode(maybeString),
+      E.mapLeft(
+        () =>
+          new Error(
+            `The "${envVarName}" env variable must contain non-empty string.`,
+          ),
+      ),
+      E.map(getJSONStringValueFromMaybeStringWhichIsJSONOrFilename),
+      TE.fromEither,
+      TE.flatten,
+    );
 
 type ConfigStringType = { type: "JSON" | "file"; str: string };
 

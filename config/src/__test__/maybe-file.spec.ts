@@ -6,7 +6,7 @@ import * as spec from "../maybe-file";
 const testPassThru = async (c: ExecutionContext, value: string) => {
   c.plan(1);
   c.deepEqual(
-    await spec.getJSONStringValueFromStringWhichIsJSONOrFilename(value)(),
+    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilename(value)(),
     E.right(value),
   );
 };
@@ -24,7 +24,7 @@ test("Validate that passThru works for '{}'", testPassThru, "{}");
 const testFile = async (c: ExecutionContext, path: string) => {
   c.plan(1);
   c.deepEqual(
-    await spec.getJSONStringValueFromStringWhichIsJSONOrFilename(path)(),
+    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilename(path)(),
     E.right(await fs.readFile(path, "utf-8")),
   );
 };
@@ -38,10 +38,38 @@ test(
 test("Validate that getJSONStringValueFromStringWhichIsJSONOrFilename detects incorrect input", async (c) => {
   c.plan(1);
   c.deepEqual(
-    await spec.getJSONStringValueFromStringWhichIsJSONOrFilename("garbage")(),
+    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilename(
+      "garbage",
+    )(),
     E.left(
       new Error(
         'The env variable string must start with one of the following: "^\\W*(\\{|\\[|"|t|f|\\d|-|n)",".","/".',
+      ),
+    ),
+  );
+});
+
+test("Validate that getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar detects correct input", async (c) => {
+  c.plan(1);
+  const envVarName = "ENV_VAR_NAME";
+  c.deepEqual(
+    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar(
+      envVarName,
+    )('{"property": true}')(),
+    E.right('{"property": true}'),
+  );
+});
+
+test("Validate that getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar detects incorrect input", async (c) => {
+  c.plan(1);
+  const envVarName = "ENV_VAR_NAME";
+  c.deepEqual(
+    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar(
+      envVarName,
+    )(123)(),
+    E.left(
+      new Error(
+        `The "${envVarName}" env variable must contain non-empty string.`,
       ),
     ),
   );

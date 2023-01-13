@@ -35,6 +35,12 @@ test(
   "./package.json",
 );
 
+test(
+  "Validate that file works for string with same characters as JSON regexp",
+  testFile,
+  "./tsconfig.json",
+);
+
 test("Validate that getJSONStringValueFromStringWhichIsJSONOrFilename detects incorrect input", async (c) => {
   c.plan(1);
   c.deepEqual(
@@ -43,7 +49,7 @@ test("Validate that getJSONStringValueFromStringWhichIsJSONOrFilename detects in
     )(),
     E.left(
       new Error(
-        'The env variable string must start with one of the following: "^\\W*(\\{|\\[|"|t|f|\\d|-|n)",".","/".',
+        'The env variable string must start with one of the following: "^\\s*(\\{|\\[|"|t|f|\\d|-|n)",".","/".',
       ),
     ),
   );

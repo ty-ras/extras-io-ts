@@ -12,3 +12,4 @@ This particular repository contains generic libraries related to using [`io-ts`]
 - [typed-sql](./typed-sql) contains library which enables type-safe SQL query string specification and execution with a help of [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates) and [`io-ts`](https://github.com/gcanti/io-ts) library.
 - [config](./config) contains library which encapsulates common logic related to reading JSON-encoded configuration values from e.g. environment variables.
 - [main](./main) contains library which makes it easier to execute entrypoint asynchronous functions which use `TaskEither`.
+- [state](./state) contains library for handling state in TyRAS backend in most intuitive way: state passed to endpoint handlers being object, and endpoint handlers specifying which state properties they need via array of strings.

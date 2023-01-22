@@ -88,7 +88,7 @@ test("Validate that validateRows invokes given validation", async (c) => {
   ]);
   const executor = F.pipe(
     usingMockedClient,
-    input.executeSQLQuery`SELECT 1`,
+    input.prepareSQL`SELECT 1`,
     spec.validateRows(spec.one(t.string)),
   );
   // First invocation passes, because first mocked query result only contains one row

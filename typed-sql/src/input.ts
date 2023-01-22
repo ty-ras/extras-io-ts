@@ -4,10 +4,10 @@ import { function as F, taskEither as TE } from "fp-ts";
 import * as parameters from "./parameters";
 import * as errors from "./errors";
 
-export function executeSQLQuery(
+export function prepareSQL(
   template: TemplateStringsArray,
 ): SQLQueryInformation<void>;
-export function executeSQLQuery<
+export function prepareSQL<
   TArgs extends [
     parameters.SQLTemplateParameter,
     ...Array<parameters.SQLTemplateParameter>,
@@ -18,7 +18,7 @@ export function executeSQLQuery<
 ): SQLQueryInformation<
   TArgs[number] extends parameters.SQLRaw ? void : SQLParameterReducer<TArgs>
 >;
-export function executeSQLQuery<
+export function prepareSQL<
   TArgs extends Array<parameters.SQLTemplateParameter>,
 >(
   template: TemplateStringsArray,

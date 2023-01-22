@@ -15,7 +15,7 @@ test("Validate that execution works for parameterless SQL", async (c) => {
   const mockQueryResult = ["returnedRow"];
   const { seenParameters, usingMockedClient } =
     common.createMockedClientProvider([mockQueryResult]);
-  const executor = F.pipe(usingMockedClient, spec.executeSQLQuery`SELECT 1`);
+  const executor = F.pipe(usingMockedClient, spec.prepareSQL`SELECT 1`);
   const expectedSQLString = "SELECT 1";
   c.deepEqual(executor.sqlString, expectedSQLString);
   c.deepEqual(seenParameters, []);
@@ -40,7 +40,7 @@ test("Validate that execution works for SQL with raw SQL string fragments", asyn
     common.createMockedClientProvider([mockQueryResult]);
   const executor = F.pipe(
     usingMockedClient,
-    spec.executeSQLQuery`SELECT ${parameters.raw("1")}`,
+    spec.prepareSQL`SELECT ${parameters.raw("1")}`,
   );
   const expectedSQLString = "SELECT 1";
   c.deepEqual(executor.sqlString, expectedSQLString);
@@ -67,7 +67,7 @@ test("Validate that execution works for SQL with parameters", async (c) => {
   const idParameter = parameters.parameter("id", t.string);
   const executor = F.pipe(
     usingMockedClient,
-    spec.executeSQLQuery`SELECT payload FROM things WHERE id = ${idParameter}`,
+    spec.prepareSQL`SELECT payload FROM things WHERE id = ${idParameter}`,
   );
 
   const expectedSQLString = "SELECT payload FROM things WHERE id = $1";
@@ -101,7 +101,7 @@ test("Validate that execution works for SQL with raw fragments and parameters mi
   const idParameter = parameters.parameter("id", t.string);
   const executor = F.pipe(
     usingMockedClient,
-    spec.executeSQLQuery`SELECT ${parameters.raw(
+    spec.prepareSQL`SELECT ${parameters.raw(
       "payload",
     )} FROM things WHERE id = ${idParameter}`,
   );
@@ -128,11 +128,11 @@ test("Validate that execution works for SQL with raw fragments and parameters mi
   }
 });
 
-test("Validate that passing invalid parameters to executeSQLQuery throws correct errors", (c) => {
+test("Validate that passing invalid parameters to prepareSQL throws correct errors", (c) => {
   c.plan(2);
   c.throws(
     () =>
-      spec.executeSQLQuery`SELECT ${parameters.parameter(
+      spec.prepareSQL`SELECT ${parameters.parameter(
         "duplicate",
         t.string,
       )}, ${parameters.parameter("duplicate", t.number)}`,
@@ -140,7 +140,7 @@ test("Validate that passing invalid parameters to executeSQLQuery throws correct
       instanceOf: errors.DuplicateSQLParameterNameError,
     },
   );
-  c.throws(() => spec.executeSQLQuery`SELECT ${"garbage" as any}`, {
+  c.throws(() => spec.prepareSQL`SELECT ${"garbage" as any}`, {
     instanceOf: errors.InvalidSQLTemplateArgumentError,
   });
 });
@@ -153,7 +153,7 @@ test("Validate that invalid query input parameters are detected", async (c) => {
   const idParameter = parameters.parameter("id", t.string);
   const executor = F.pipe(
     usingMockedClient,
-    spec.executeSQLQuery`SELECT payload FROM things WHERE id = ${idParameter}`,
+    spec.prepareSQL`SELECT payload FROM things WHERE id = ${idParameter}`,
   );
   c.deepEqual(executor.sqlString, "SELECT payload FROM things WHERE id = $1");
   const expectedSeenParameters = [
@@ -188,7 +188,7 @@ test("Validate that duplicate parameters work ", async (c) => {
   const sameParameterReferencedTwice = parameters.parameter("param", t.string);
   const executor = F.pipe(
     usingMockedClient,
-    spec.executeSQLQuery`SELECT value FROM table WHERE one_property = ${sameParameterReferencedTwice} OR another_property = ${sameParameterReferencedTwice}`,
+    spec.prepareSQL`SELECT value FROM table WHERE one_property = ${sameParameterReferencedTwice} OR another_property = ${sameParameterReferencedTwice}`,
   );
   const expectedSQLString =
     "SELECT value FROM table WHERE one_property = $1 OR another_property = $1";

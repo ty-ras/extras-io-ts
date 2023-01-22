@@ -11,3 +11,4 @@ This particular repository contains generic libraries related to using [`io-ts`]
 - [resource-pool](./resource-pool) contains generic resource pool API and implementation which uses `Task`s and `TaskEither` constructs of `fp-ts`.
 - [typed-sql](./typed-sql) contains library which enables type-safe SQL query string specification and execution with a help of [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates) and [`io-ts`](https://github.com/gcanti/io-ts) library.
 - [config](./config) contains library which encapsulates common logic related to reading JSON-encoded configuration values from e.g. environment variables.
+- [main](./main) contains library which makes it easier to execute entrypoint asynchronous functions which use `TaskEither`.

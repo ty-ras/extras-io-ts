@@ -4,6 +4,7 @@ import {
   array as A,
   either as E,
   taskEither as TE,
+  type eq as EQ,
 } from "fp-ts";
 import type * as api from "./api";
 import * as errors from "./errors";
@@ -82,7 +83,7 @@ export const createRelease =
       state.resources,
       // Find the resource from state
       A.findFirstMap((r) =>
-        r && r.resource === resource && r.returnedAt === undefined
+        r && state.equality(r.resource, resource) && r.returnedAt === undefined
           ? O.some(r)
           : O.none,
       ),
@@ -104,12 +105,14 @@ export interface ResourcePoolState<T> {
   resources: Array<Resource<T> | undefined>;
   minCount: number;
   maxCount: number | undefined;
+  equality: Equality<T>;
 }
 
 export type ResourceCreateTask<T> = () => TE.TaskEither<Error, T>;
 export type ResourceDestroyTask<T> = (
   resource: T,
 ) => TE.TaskEither<Error, void>;
+export type Equality<T> = EQ.Eq<T>["equals"];
 
 export class Resource<T> {
   public constructor(

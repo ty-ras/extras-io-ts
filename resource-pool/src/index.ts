@@ -12,6 +12,7 @@ export type {
   ResourceRelease,
 } from "./api";
 export * from "./factory";
+export type { ResourceCreateTask, ResourceDestroyTask, Equality } from "./pool";
 export type {
   ResourcePoolFullError,
   ResourceNotPartOfPoolError,

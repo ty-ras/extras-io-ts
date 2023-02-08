@@ -9,7 +9,7 @@ export const createSimpleResourcePool = <T>({
   create,
   destroy,
   ...opts
-}: ResourcePoolCreationOptions<ResourceCreate<T>, ResourceDestroy<T>>) =>
+}: ResourcePoolCreationOptions<T, ResourceCreate<T>, ResourceDestroy<T>>) =>
   createSimpleResourcePoolFromTasks({
     ...opts,
     create: () => TE.tryCatch(async () => await create(), E.toError),
@@ -19,16 +19,18 @@ export const createSimpleResourcePool = <T>({
 
 export const createSimpleResourcePoolFromTasks = <T>(
   opts: ResourcePoolCreationOptions<
+    T,
     pool.ResourceCreateTask<T>,
     pool.ResourceDestroyTask<T>
   >,
 ) => _createResourcePool(Object.assign({}, defaultOptions, opts));
 
-export interface ResourcePoolCreationOptions<TCreate, TDestroy> {
+export interface ResourcePoolCreationOptions<T, TCreate, TDestroy> {
   minCount?: number; // Default 0
   maxCount?: number; // TODO check that >= minCount
   create: TCreate;
   destroy: TDestroy;
+  equality?: pool.Equality<T>;
 }
 
 export type ResourceCreate<T> = () => Promise<T>;
@@ -44,6 +46,7 @@ const _createResourcePool = <TResource>({
   maxCount,
   create,
   destroy,
+  equality,
 }: InternalResourcePoolOptions<TResource>): ResourcePoolWithAdministration<
   TResource,
   void
@@ -52,6 +55,7 @@ const _createResourcePool = <TResource>({
     resources: [],
     minCount,
     maxCount,
+    equality: equality ?? defaultEquality(),
   };
 
   return {
@@ -75,6 +79,12 @@ const defaultOptions = {
 
 type InternalResourcePoolOptions<T> = typeof defaultOptions &
   ResourcePoolCreationOptions<
+    T,
     pool.ResourceCreateTask<T>,
     pool.ResourceDestroyTask<T>
   >;
+
+const defaultEquality =
+  <T>(): pool.Equality<T> =>
+  (x, y) =>
+    x === y;

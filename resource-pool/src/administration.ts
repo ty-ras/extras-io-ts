@@ -27,7 +27,7 @@ export const createRunEviction =
     return F.pipe(
       state.resources,
       A.reduceWithIndex<
-        pool.Resource<TResource> | undefined,
+        pool.ResourcePoolStateArrayItem<TResource>,
         EvictReduceState<TResource>
       >(
         { now: Date.now(), toBeEvicted: [], toBeRetained: [] },
@@ -43,7 +43,7 @@ export const createRunEviction =
             })
           ) {
             reduceState.toBeEvicted.push(r.resource);
-          } else {
+          } else if (r !== null) {
             reduceState.toBeRetained.push(r);
           }
           return reduceState;

@@ -21,3 +21,4 @@ export {
   isResourcePoolFullError,
   isResourceNotPartOfPoolError,
 } from "./errors";
+export * from "./retry";

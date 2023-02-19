@@ -1,5 +1,5 @@
-import * as api from "./api";
 import { function as F, either as E, taskEither as TE } from "fp-ts";
+import * as api from "./api";
 import * as errors from "./errors";
 
 /**
@@ -63,7 +63,7 @@ export interface DynamicRetryFunctionalityArgs {
   attemptCount: number;
 }
 
-const tryAcquire = async <TResource, TAcquireParameters>(
+const acquireWithRetry = async <TResource, TAcquireParameters>(
   acquire: api.ResourceAcquire<TResource, TAcquireParameters>,
   args: TAcquireParameters,
   retryFunctionality: DynamicRetryFunctionality,
@@ -126,7 +126,7 @@ class PoolWithRetryFunctionality<TResource, TAcquireParameters>
     this.acquire = (args) =>
       F.pipe(
         TE.tryCatch(
-          async () => await tryAcquire(acquire, args, retryFunctionality),
+          async () => await acquireWithRetry(acquire, args, retryFunctionality),
           E.toError,
         ),
         TE.flatten,

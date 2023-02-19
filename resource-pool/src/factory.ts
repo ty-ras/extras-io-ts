@@ -2,6 +2,7 @@ import { either as E, taskEither as TE } from "fp-ts";
 import * as api from "./api";
 import * as pool from "./pool";
 import * as admin from "./administration";
+import * as retry from "./retry";
 
 // "Throws" if max count constraint is violated
 // Can build another pool on top of this, which would instead keep retrying until succeeding.
@@ -31,6 +32,7 @@ export interface ResourcePoolCreationOptions<T, TCreate, TDestroy> {
   create: TCreate;
   destroy: TDestroy;
   equality?: pool.Equality<T>;
+  retry?: retry.RetryFunctionality;
 }
 
 export type ResourceCreate<T> = () => Promise<T>;
@@ -47,6 +49,7 @@ const _createResourcePool = <TResource>({
   create,
   destroy,
   equality,
+  retry: retryOpts,
 }: InternalResourcePoolOptions<TResource>): ResourcePoolWithAdministration<
   TResource,
   void
@@ -58,11 +61,15 @@ const _createResourcePool = <TResource>({
     equality: equality ?? defaultEquality(),
   };
 
+  const poolRetVal: api.ResourcePool<TResource> = {
+    acquire: pool.createAcquire(state, create),
+    release: pool.createRelease(state),
+  };
+
   return {
-    pool: {
-      acquire: pool.createAcquire(state, create),
-      release: pool.createRelease(state),
-    },
+    pool: retryOpts
+      ? retry.augmentWithRetry(retryOpts)(poolRetVal)
+      : poolRetVal,
     administration: {
       getCurrentResourceCount: () =>
         pool.getCurrentResourceCount(state.resources),

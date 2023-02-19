@@ -64,7 +64,8 @@ const _createResourcePool = <TResource>({
       release: pool.createRelease(state),
     },
     administration: {
-      getCurrentResourceCount: () => state.resources.length,
+      getCurrentResourceCount: () =>
+        pool.getCurrentResourceCount(state.resources),
       getMinCount: () => state.minCount,
       getMaxCount: () => state.maxCount,
       runEviction: admin.createRunEviction(state, destroy),

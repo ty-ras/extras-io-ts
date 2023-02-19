@@ -2,6 +2,7 @@ import {
   function as F,
   option as O,
   array as A,
+  readonlyArray as RA,
   either as E,
   taskEither as TE,
   type eq as EQ,
@@ -26,15 +27,24 @@ export const createAcquire =
       O.getOrElseW(() =>
         // If not found, then start process of creating new one
         F.pipe(
-          state.resources.length,
+          // Check that we have room for new resource
+          isRoomForResource(state.maxCount, state.resources),
           E.fromPredicate(
-            (len) => isRoomForResource(state.maxCount, len),
+            F.identity,
             () =>
               new errors.ResourcePoolFullError(
                 "Resource pool max capacity reached",
               ),
           ),
-          // Before doing async, mark that we are reserved this array slot for future use
+          // Deduce the index where to store the resource to be created
+          E.map(() =>
+            F.pipe(
+              state.resources,
+              RA.findIndex((r) => r === null),
+              O.getOrElse(() => state.resources.length),
+            ),
+          ),
+          // Before doing async, mark that we have reserved this array slot for future use
           E.chainFirst((idx) => E.of((state.resources[idx] = undefined))),
           TE.fromEither,
           // Acquire resource by calling callback
@@ -53,7 +63,7 @@ export const createAcquire =
               // We have errored -> clean up reserved slot if needed
               const isError = err instanceof Error;
               if (!isError) {
-                state.resources.splice(err.idx, 1);
+                state.resources[err.idx] = null;
               }
               // Return Error object
               return isError ? err : err.error;
@@ -83,7 +93,7 @@ export const createRelease =
       state.resources,
       // Find the resource from state
       A.findFirstMap((r) =>
-        r && state.equality(r.resource, resource) && r.returnedAt === undefined
+        r && r.returnedAt === undefined && state.equality(r.resource, resource)
           ? O.some(r)
           : O.none,
       ),
@@ -102,12 +112,18 @@ export const createRelease =
     );
 
 export interface ResourcePoolState<T> {
-  resources: Array<Resource<T> | undefined>;
+  resources: Array<ResourcePoolStateArrayItem<T>>;
   minCount: number;
   maxCount: number | undefined;
   equality: Equality<T>;
 }
-
+export type ResourcePoolStateArrayItem<T> =
+  // Class wrapping whatever resource we are pooling
+  | Resource<T>
+  // Undefined means that we are reserved the slot, and are awaiting on the asynchronous creation callback to complete
+  | undefined
+  // Null means that asynchronous creation callback failed, and this slot is free to take
+  | null;
 export type ResourceCreateTask<T> = () => TE.TaskEither<Error, T>;
 export type ResourceDestroyTask<T> = (
   resource: T,
@@ -121,5 +137,18 @@ export class Resource<T> {
   ) {}
 }
 
-const isRoomForResource = (maxCount: number | undefined, arrayLength: number) =>
-  maxCount === undefined || arrayLength < maxCount;
+const isRoomForResource = (
+  maxCount: number | undefined,
+  array: ReadonlyArray<ResourcePoolStateArrayItem<unknown>>,
+) =>
+  maxCount === undefined ||
+  array.length < maxCount ||
+  getCurrentResourceCount(array) < maxCount;
+
+export const getCurrentResourceCount = (
+  array: ReadonlyArray<ResourcePoolStateArrayItem<unknown>>,
+) =>
+  F.pipe(
+    array,
+    RA.reduce(0, (nonNullCount, r) => nonNullCount + (r === null ? 0 : 1)),
+  );

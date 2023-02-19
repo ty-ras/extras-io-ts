@@ -90,6 +90,42 @@ test("Validate that concurrent acquire works", async (c) => {
   }
 });
 
+test("Validate that if one creation callback throws while another is being awaited on, the pool state retains integrity", async (c) => {
+  c.plan(5);
+  let invocationCount = 0;
+  const { pool } = spec.createSimpleResourcePool({
+    create: () => {
+      ++invocationCount;
+      const thisCount = invocationCount;
+      return invocationCount > 2
+        ? Promise.reject(
+            "This is test error: pool did not preserve state integrity while awaiting on two creation callbacks while one of them throwed",
+          )
+        : new Promise<number>((resolve, reject) =>
+            setTimeout(
+              () =>
+                thisCount === 1
+                  ? reject("Rejecting first creation")
+                  : resolve(thisCount),
+              thisCount === 1 ? 200 : 500,
+            ),
+          );
+    },
+    destroy: () => Promise.resolve(),
+  });
+  const firstResource = pool.acquire()();
+  await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  const secondResource = pool.acquire()();
+  c.deepEqual(
+    await firstResource,
+    E.left(new Error("Rejecting first creation")),
+  );
+  c.deepEqual(await secondResource, E.right(2));
+  c.deepEqual(await pool.release(2)(), E.right(undefined));
+  c.deepEqual(await pool.acquire()(), E.right(2));
+  c.deepEqual(invocationCount, 2);
+});
+
 class CreationError extends Error {
   public constructor() {
     super("Creation error");

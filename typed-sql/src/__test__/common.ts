@@ -6,7 +6,7 @@ export const createMockedClientProvider = (
   returnValues: ReadonlyArray<Array<unknown>>,
 ): {
   seenParameters: SeenParameters;
-  usingMockedClient: input.SQLClientInformation<Error, LoggedQueries>;
+  usingMockedClient: input.SQLClientInformation<LoggedQueries>;
 } => {
   let returnValueIndex = 0;
   const seenParameters: SeenParameters = [];

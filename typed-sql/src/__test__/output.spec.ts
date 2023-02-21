@@ -4,6 +4,7 @@ import * as input from "../input";
 import { function as F, either as E } from "fp-ts";
 import * as t from "io-ts";
 import * as common from "./common";
+import * as errors from "../errors";
 
 const runValidationForOneValue = (
   c: ExecutionContext,
@@ -94,5 +95,8 @@ test("Validate that validateRows invokes given validation", async (c) => {
   // First invocation passes, because first mocked query result only contains one row
   c.true(E.isRight(await executor()([])()));
   // Second invocation should not pass, because second mocked query result contains two rows
-  c.true(E.isLeft(await executor()([])()));
+  const shouldBeError = await executor()([])();
+  if (E.isLeft(shouldBeError)) {
+    c.true(shouldBeError.left instanceof errors.SQLQueryOutputValidationError);
+  }
 });

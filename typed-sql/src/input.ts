@@ -60,6 +60,10 @@ export function prepareSQL<
           TE.fromEither<t.Errors, void | { [x: string]: unknown }>(
             parameterValidation.decode(queryParameters),
           ),
+          TE.mapLeft(
+            (validationError) =>
+              new errors.SQLQueryInputValidationError(validationError),
+          ),
           TE.chainW((validatedParameters) =>
             executeQuery(
               client,
@@ -96,11 +100,11 @@ export type SQLParameterReducer<
     >
   : Readonly<Result>;
 
-export type SQLQueryInformation<TParameters> = <TError, TClient>(
-  clientInformation: SQLClientInformation<TError, TClient>,
-) => SQLQueryExecutor<TError | t.Errors, TClient, TParameters, Array<unknown>>;
+export type SQLQueryInformation<TParameters> = <TClient>(
+  clientInformation: SQLClientInformation<TClient>,
+) => SQLQueryExecutor<TClient, TParameters, Array<unknown>>;
 
-export interface SQLClientInformation<TError, TClient> {
+export interface SQLClientInformation<TClient> {
   constructParameterReference: (
     parameterIndex: number,
     parameter: parameters.SQLParameter<string, t.Mixed>,
@@ -109,25 +113,19 @@ export interface SQLClientInformation<TError, TClient> {
     client: TClient,
     sqlString: string,
     parameters: Array<unknown>,
-  ) => TE.TaskEither<TError, Array<unknown>>;
+  ) => TE.TaskEither<Error, Array<unknown>>;
 }
 
-export type SQLQueryExecutor<TError, TClient, TParameters, TReturnType> =
-  SQLQueryExecutorFunction<TError, TClient, TParameters, TReturnType> &
-    WithSQLString;
+export type SQLQueryExecutor<TClient, TParameters, TReturnType> =
+  SQLQueryExecutorFunction<TClient, TParameters, TReturnType> & WithSQLString;
 
 export interface WithSQLString {
   readonly sqlString: string;
 }
 
-export type SQLQueryExecutorFunction<
-  TError,
-  TClient,
-  TParameters,
-  TReturnType,
-> = (
+export type SQLQueryExecutorFunction<TClient, TParameters, TReturnType> = (
   parameters: TParameters,
-) => (client: TClient) => TE.TaskEither<TError, TReturnType>;
+) => (client: TClient) => TE.TaskEither<Error, TReturnType>;
 
 const constructTemplateString = <T>(
   fragments: TemplateStringsArray,

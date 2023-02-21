@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import * as t from "io-ts";
-import { function as F, taskEither as TE } from "fp-ts";
+import { function as F, either as E, taskEither as TE } from "fp-ts";
 import type * as query from "./input";
+import * as errors from "./errors";
 
 export const one = <TValidation extends t.Mixed>(singleRow: TValidation) =>
   many(singleRow).pipe<
@@ -32,26 +33,24 @@ export const many = <TValidation extends t.Mixed>(singleRow: TValidation) =>
 export const validateRows =
   <TValidation extends t.Mixed>(
     validation: TValidation,
-  ): (<TError, TClient, TParameters>(
-    executor: query.SQLQueryExecutor<
-      TError,
-      TClient,
-      TParameters,
-      Array<unknown>
-    >,
-  ) => query.SQLQueryExecutor<
-    TError | t.Errors,
-    TClient,
-    TParameters,
-    t.TypeOf<TValidation>
-  >) =>
+  ): (<TClient, TParameters>(
+    executor: query.SQLQueryExecutor<TClient, TParameters, Array<unknown>>,
+  ) => query.SQLQueryExecutor<TClient, TParameters, t.TypeOf<TValidation>>) =>
   (executor) => {
     function retVal(parameters: ParametersOf<typeof executor>) {
       return (client: ClientOf<typeof executor>) =>
         F.pipe(
           client,
           executor(parameters),
-          TE.chainW((rows) => TE.fromEither(validation.decode(rows))),
+          TE.chainEitherKW((rows) =>
+            F.pipe(
+              validation.decode(rows),
+              E.mapLeft(
+                (validationError) =>
+                  new errors.SQLQueryOutputValidationError(validationError),
+              ),
+            ),
+          ),
         );
     }
     retVal.sqlString = executor.sqlString;
@@ -59,23 +58,16 @@ export const validateRows =
   };
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-type ParametersOf<
-  TExecutor extends query.SQLQueryExecutor<any, any, any, any>,
-> = TExecutor extends query.SQLQueryExecutor<
-  infer _0,
-  infer _1,
-  infer TParameters,
-  infer _2
->
-  ? TParameters
-  : never;
-
-type ClientOf<TExecutor extends query.SQLQueryExecutor<any, any, any, any>> =
+type ParametersOf<TExecutor extends query.SQLQueryExecutor<any, any, any>> =
   TExecutor extends query.SQLQueryExecutor<
-    infer _0,
-    infer TClient,
     infer _1,
+    infer TParameters,
     infer _2
   >
+    ? TParameters
+    : never;
+
+type ClientOf<TExecutor extends query.SQLQueryExecutor<any, any, any>> =
+  TExecutor extends query.SQLQueryExecutor<infer TClient, infer _1, infer _2>
     ? TClient
     : never;

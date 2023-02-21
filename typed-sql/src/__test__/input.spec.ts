@@ -166,15 +166,7 @@ test("Validate that invalid query input parameters are detected", async (c) => {
   const loggedQueries: common.LoggedQueries = [];
   const result = await executor("garbage" as any)(loggedQueries)();
   if (E.isLeft(result)) {
-    // We can't access the query validation, therefore we delete ref to it
-    delete (result.left as any)[0].context[0]["type"];
-    c.deepEqual(result.left, [
-      {
-        context: [{ actual: "garbage", key: "" }],
-        message: undefined,
-        value: "garbage",
-      },
-    ]);
+    c.true(result.left instanceof errors.SQLQueryInputValidationError);
     c.deepEqual(loggedQueries, []);
     c.deepEqual(seenParameters, expectedSeenParameters);
   }

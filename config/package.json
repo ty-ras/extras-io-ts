@@ -1,6 +1,6 @@
 {
   "name": "@ty-ras-extras/config-io-ts",
-  "version": "0.13.4",
+  "version": "0.13.5",
   "author": {
     "name": "Stanislav Muhametsin",
     "email": "346799+stazz@users.noreply.github.com",
@@ -31,6 +31,16 @@
       "types": "./dist-ts/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist-cjs/index.js"
+    },
+    "./string": {
+      "types": "./dist-ts/string.d.ts",
+      "import": "./dist-esm/string.js",
+      "require": "./dist-cjs/string.js"
+    },
+    "./maybe-file": {
+      "types": "./dist-ts/maybe-file.d.ts",
+      "import": "./dist-esm/maybe-file.js",
+      "require": "./dist-cjs/maybe-file.js"
     }
   },
   "dependencies": {},

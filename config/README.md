@@ -1,4 +1,4 @@
-# Typesafe REST API Specification Extras - Resource Pool With FP-TS
+# Typesafe REST API Specification Extras - Configuration Utilities with FP-TS
 
 [![Coverage](https://codecov.io/gh/ty-ras/extras-io-ts/branch/main/graph/badge.svg?flag=config)](https://codecov.io/gh/ty-ras/extras-io-ts)
 
@@ -11,7 +11,7 @@ The strings are parsed as necessary and then validated at runtime using [`io-ts`
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
 import { configuration } from "@ty-ras-extras/frontend-io-ts";
-// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config/string";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config-io-ts/string";
 
 // Define runtime validation of configuration
 const validation = t.type({
@@ -34,7 +34,7 @@ For situations where environment variable is always serialized JSON:
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
 import { configuration } from "@ty-ras-extras/backend-io-ts";
-// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config-io-ts";
 
 // Define runtime validation of configuration
 const validation = t.type({
@@ -56,7 +56,7 @@ For situations where environment variable is either serialized JSON or a path to
 import { function as F } from "fp-ts";
 import * as t from "io-ts";
 import { configuration } from "@ty-ras-extras/backend-io-ts";
-// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config";
+// Or, if not using bundled libraries: import * as configuration from "@ty-ras-extras/config-io-ts";
 
 // Define runtime validation of configuration
 const validation = t.type({

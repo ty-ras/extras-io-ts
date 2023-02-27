@@ -10,6 +10,6 @@ This all is done in such way that it does not make development tedious or boring
 This particular repository contains generic libraries related to using [`io-ts`](https://github.com/gcanti/io-ts) and [`fp-ts`](https://github.com/gcanti/fp-ts):
 - [resource-pool](./resource-pool) contains generic resource pool API and implementation which uses `Task`s and `TaskEither` constructs of `fp-ts`.
 - [typed-sql](./typed-sql) contains library which enables type-safe SQL query string specification and execution with a help of [tagged templates](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals#tagged_templates) and [`io-ts`](https://github.com/gcanti/io-ts) library.
-- [config](./config) contains library which encapsulates common logic related to reading JSON-encoded configuration values from e.g. environment variables.
+- [config](./config) contains library which encapsulates common logic related to reading JSON-encoded configuration values from e.g. environment variables, in `fp-ts` style.
 - [main](./main) contains library which makes it easier to execute entrypoint asynchronous functions which use `TaskEither`.
 - [state](./state) contains library for handling state in TyRAS backend in most intuitive way: state passed to endpoint handlers being object, and endpoint handlers specifying which state properties they need via array of strings.

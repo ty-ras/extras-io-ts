@@ -1,12 +1,22 @@
+/**
+ * @file This file contains function to create callback which takes description about needed BE endpoint state/context, and produces {@link tyrasEP.EndpointStateInformation} which will be then used by TyRAS framework to perform the state/context extraction and validation process, before passing it to BE endpoint.
+ */
+
 import * as t from "io-ts";
 import { function as F, either as E } from "fp-ts";
 import type * as tyrasEP from "@ty-ras/endpoint";
 import * as tyras from "@ty-ras/data-io-ts";
+import * as consts from "./consts";
 import type * as validation from "./validation";
-import type * as state from "./state";
-import type * as stateInfo from "./state-info";
-import * as spec from "./spec";
+import type * as state from "./state.types";
+import type * as stateInfo from "./state-info.types";
+import type * as spec from "./spec.types";
 
+/**
+ * Creates {@link CreateStateValidatorFactory} which can be used to create {@link tyrasEP.EndpointStateInformation} objects from given BE endpoint state/context description.
+ * @param validation The object, keys being state/context names, and values being {@link validation.StatePropertyValidation}.
+ * @returns The {@link CreateStateValidatorFactory} which can be used to create {@link tyrasEP.EndpointStateInformation} objects from given BE endpoint state/context description.
+ */
 export const createStateValidatorFactory =
   <TStateValidation extends validation.TStateValidationBase>(
     validation: TStateValidation,
@@ -19,7 +29,7 @@ export const createStateValidatorFactory =
       ]
     >;
     const getValidator = (
-      ...[propName, propSpec]: typeof entries[number]
+      ...[propName, propSpec]: (typeof entries)[number]
     ): t.Mixed => {
       const statePropValidation =
         validation[propName]?.validation ??
@@ -34,17 +44,17 @@ export const createStateValidatorFactory =
       } else {
         // For more complex spec, see what is being specified and return validation based on that.
         switch (propSpec.match) {
-          case spec.MATCH_EXACT: {
+          case consts.MATCH_EXACT: {
             const matched = propSpec.value;
             return t.refinement(statePropValidation, (v) => v === matched);
           }
-          case spec.MATCH_ONE_OF: {
+          case consts.MATCH_ONE_OF: {
             const oneOf = propSpec.values;
             return t.refinement(statePropValidation, (val) =>
               oneOf.some((one) => val === one),
             );
           }
-          case spec.MATCH_ALL_OF: {
+          case consts.MATCH_ALL_OF: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const allOf = propSpec.values as Array<any>;
             return t.refinement(
@@ -122,15 +132,21 @@ export const createStateValidatorFactory =
     };
   };
 
+/**
+ * This is the return type of {@link createStateValidatorFactory}, describing the callback used to produce {@link tyrasEP.EndpointStateInformation} objects from given description of state/context needed by BE endpoint.
+ */
 export type CreateStateValidatorFactory<
   TStateValidation extends validation.TStateValidationBase,
 > = <TStateSpec extends spec.StateSpec<TStateValidation>>(
   spec: TStateSpec,
-) => tyrasEP.EndpointStateValidator<
+) => tyrasEP.EndpointStateInformation<
   stateInfo.StateInfoOfKeys<keyof TStateSpec>,
   state.GetState<TStateValidation, TStateSpec>
 >;
 
+/**
+ * Helper type to extract generic parameter of given {@link CreateStateValidatorFactory} type.
+ */
 export type GetStateValidationInfo<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   TFactory extends CreateStateValidatorFactory<any>,

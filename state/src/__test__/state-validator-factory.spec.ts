@@ -1,10 +1,15 @@
+/**
+ * @file This file contains unit tests for functionality in file `../state-validator-factory.ts`.
+ */
+
 /* eslint-disable sonarjs/no-duplicate-string */
 import test, { type ExecutionContext } from "ava";
 import * as spec from "../state-validator-factory";
 import * as t from "io-ts";
-import * as stateSpec from "../spec";
+import type * as stateSpec from "../spec.types";
 import type * as tyras from "@ty-ras/data-backend";
 import type * as tyrasCommon from "@ty-ras/data";
+import * as consts from "../consts";
 
 const validateOneStateSpec = <
   TStateSpec extends stateSpec.StateSpec<
@@ -126,7 +131,7 @@ test(
   // State specification (which properties are desired from full state)
   {
     userId: {
-      match: stateSpec.MATCH_EXACT,
+      match: consts.MATCH_EXACT,
       value: "the-user-id",
     },
   },
@@ -143,7 +148,7 @@ test(
   // State specification (which properties are desired from full state)
   {
     database: {
-      match: stateSpec.MATCH_EXACT,
+      match: consts.MATCH_EXACT,
       value: 42,
     },
   },
@@ -169,7 +174,7 @@ test("Validate that factory detects invalid input", (c) => {
 test("Validate that factory works for oneOf matcher", (c) => {
   c.plan(2);
   const { validator } = factory({
-    database: { match: stateSpec.MATCH_ONE_OF, values: [1, 2] },
+    database: { match: consts.MATCH_ONE_OF, values: [1, 2] },
   });
   const successfulInput = { database: 1 };
   c.deepEqual(validator(successfulInput), {
@@ -185,7 +190,7 @@ test("Validate that factory works for allOf matcher", (c) => {
     many: { isAuthenticationProperty: false, validation: t.array(t.string) },
   });
   const { validator } = manyFactory({
-    many: { match: stateSpec.MATCH_ALL_OF, values: ["one", "two"] },
+    many: { match: consts.MATCH_ALL_OF, values: ["one", "two"] },
   });
   const successfulInput = { many: ["one", "two", "three"] };
   c.deepEqual(validator(successfulInput), {

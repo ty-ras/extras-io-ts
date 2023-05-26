@@ -1,23 +1,29 @@
+/**
+ * @file This file contains internal code related to administation of resource pools.
+ */
+
 import {
   function as F,
   array as A,
   readonlyArray as RA,
   either as E,
   task as T,
+  type taskEither as TE,
 } from "fp-ts";
-import * as api from "./api";
-import * as pool from "./pool";
+import type * as api from "./api.types";
+import * as state from "./state";
 
-interface EvictReduceState<T> {
-  now: number;
-  toBeEvicted: Array<T>;
-  toBeRetained: Array<pool.Resource<T> | undefined>;
-}
-
+/**
+ * Creates implementation for `runEviction` function of {@link api.ResourcePoolAdministration} interface.
+ * This function is internal to this library, and not exposed to clients.
+ * @param poolState The {@link pool.ResourcePoolState}.
+ * @param destroy The callback to destroy one resource.
+ * @returns The implementation for `runEviction` function of {@link api.ResourcePoolAdministration} interface.
+ */
 export const createRunEviction =
   <TResource>(
-    state: pool.ResourcePoolState<TResource>,
-    destroy: pool.ResourceDestroyTask<TResource>,
+    poolState: state.ResourcePoolState<TResource>,
+    destroy: ResourceDestroyTask<TResource>,
   ): api.ResourcePoolAdministration<TResource>["runEviction"] =>
   (resourceIdleTime) => {
     const shouldEvict: api.ResourceIdleTimeCustomizationFunction<TResource> =
@@ -25,15 +31,15 @@ export const createRunEviction =
         ? ({ returnedAt, now }) => now - returnedAt >= resourceIdleTime
         : resourceIdleTime;
     return F.pipe(
-      state.resources,
+      poolState.resources,
       A.reduceWithIndex<
-        pool.ResourcePoolStateArrayItem<TResource>,
+        state.ResourcePoolStateArrayItem<TResource>,
         EvictReduceState<TResource>
       >(
         { now: Date.now(), toBeEvicted: [], toBeRetained: [] },
         (idx, reduceState, r) => {
           if (
-            idx >= state.minCount &&
+            idx >= poolState.minCount &&
             r &&
             r.returnedAt !== undefined &&
             shouldEvict({
@@ -50,7 +56,7 @@ export const createRunEviction =
         },
       ),
       ({ toBeEvicted, toBeRetained }) => {
-        state.resources = toBeRetained;
+        poolState.resources = toBeRetained;
         return toBeEvicted;
       },
       T.traverseArray(destroy),
@@ -64,3 +70,16 @@ export const createRunEviction =
       })),
     );
   };
+
+interface EvictReduceState<T> {
+  now: number;
+  toBeEvicted: Array<T>;
+  toBeRetained: Array<state.Resource<T> | undefined>;
+}
+
+/**
+ * The callback for destroying the resource using {@link TE.TaskEither}.
+ */
+export type ResourceDestroyTask<T> = (
+  resource: T,
+) => TE.TaskEither<Error, void>;

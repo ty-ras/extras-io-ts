@@ -1,3 +1,7 @@
+/**
+ * @file This file contains unit tests for functionality in file `../validation.ts`.
+ */
+
 import test from "ava";
 import * as spec from "../validation";
 import * as t from "io-ts";

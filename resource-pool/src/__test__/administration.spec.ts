@@ -1,6 +1,10 @@
+/**
+ * @file This file contains unit tests for functionality in file `../administration.ts`.
+ */
+
 import test from "ava";
 import * as spec from "../factory";
-import type * as api from "../api";
+import type * as api from "../api.types";
 import * as common from "./common";
 import { either as E } from "fp-ts";
 

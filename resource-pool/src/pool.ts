@@ -1,3 +1,6 @@
+/**
+ * @file This file contains internal code related to functionality of resource pools.
+ */
 import {
   function as F,
   option as O,
@@ -5,19 +8,25 @@ import {
   readonlyArray as RA,
   either as E,
   taskEither as TE,
-  type eq as EQ,
 } from "fp-ts";
-import type * as api from "./api";
+import type * as api from "./api.types";
 import * as errors from "./errors";
+import * as state from "./state";
 
+/**
+ * Creates {@link api.ResourceAcquire} that can be used as {@link api.ResourcePool#acquire}.
+ * @param poolState The {@link ResourcePoolState}.
+ * @param create The {@link ResourceCreateTask} to use to create resources.
+ * @returns The {@link api.ResourceAcquire} that can be used as {@link api.ResourcePool#acquire}.
+ */
 export const createAcquire =
   <TResource>(
-    state: ResourcePoolState<TResource>,
+    poolState: state.ResourcePoolState<TResource>,
     create: ResourceCreateTask<TResource>,
   ): api.ResourceAcquire<TResource, void> =>
   () =>
     F.pipe(
-      state.resources,
+      poolState.resources,
       // Find first free resource (and map from "Resource<T> | undefined" to "Resource<T>")
       A.findFirstMap((r) =>
         r && r.returnedAt !== undefined ? O.some(r) : O.none,
@@ -28,7 +37,7 @@ export const createAcquire =
         // If not found, then start process of creating new one
         F.pipe(
           // Check that we have room for new resource
-          isRoomForResource(state.maxCount, state.resources),
+          isRoomForResource(poolState.maxCount, poolState.resources),
           E.fromPredicate(
             F.identity,
             () =>
@@ -39,13 +48,13 @@ export const createAcquire =
           // Deduce the index where to store the resource to be created
           E.map(() =>
             F.pipe(
-              state.resources,
+              poolState.resources,
               RA.findIndex((r) => r === null),
-              O.getOrElse(() => state.resources.length),
+              O.getOrElse(() => poolState.resources.length),
             ),
           ),
           // Before doing async, mark that we have reserved this array slot for future use
-          E.chainFirst((idx) => E.of((state.resources[idx] = undefined))),
+          E.chainFirst((idx) => E.of((poolState.resources[idx] = undefined))),
           TE.fromEither,
           // Acquire resource by calling callback
           TE.chainW((idx) =>
@@ -63,14 +72,14 @@ export const createAcquire =
               // We have errored -> clean up reserved slot if needed
               const isError = err instanceof Error;
               if (!isError) {
-                state.resources[err.idx] = null;
+                poolState.resources[err.idx] = null;
               }
               // Return Error object
               return isError ? err : err.error;
             },
             ({ idx, resource }) => {
               // We have succeeded -> save the result
-              state.resources[idx] = new Resource(resource);
+              poolState.resources[idx] = new state.Resource(resource);
               // Return the resource
               return resource;
             },
@@ -79,14 +88,19 @@ export const createAcquire =
       ),
       // Lift sync version to async
       (resourceOrTask) =>
-        resourceOrTask instanceof Resource
+        resourceOrTask instanceof state.Resource
           ? TE.of<Error, TResource>(resourceOrTask.resource)
           : resourceOrTask,
     );
 
+/**
+ * Creates {@link api.ResourceRelease} that can be used as {@link api.ResourcePool#release}.
+ * @param state The {@link ResourcePoolState}.
+ * @returns The {@link api.ResourceRelease} that can be used as {@link api.ResourcePool#release}.
+ */
 export const createRelease =
   <TResource>(
-    state: ResourcePoolState<TResource>,
+    state: state.ResourcePoolState<TResource>,
   ): api.ResourceRelease<TResource> =>
   (resource) =>
     F.pipe(
@@ -111,42 +125,26 @@ export const createRelease =
       TE.map(() => {}),
     );
 
-export interface ResourcePoolState<T> {
-  resources: Array<ResourcePoolStateArrayItem<T>>;
-  minCount: number;
-  maxCount: number | undefined;
-  equality: Equality<T>;
-}
-export type ResourcePoolStateArrayItem<T> =
-  // Class wrapping whatever resource we are pooling
-  | Resource<T>
-  // Undefined means that we are reserved the slot, and are awaiting on the asynchronous creation callback to complete
-  | undefined
-  // Null means that asynchronous creation callback failed, and this slot is free to take
-  | null;
+/**
+ * The callback for creating the resource using {@link TE.TaskEither}.
+ */
 export type ResourceCreateTask<T> = () => TE.TaskEither<Error, T>;
-export type ResourceDestroyTask<T> = (
-  resource: T,
-) => TE.TaskEither<Error, void>;
-export type Equality<T> = EQ.Eq<T>["equals"];
-
-export class Resource<T> {
-  public constructor(
-    public readonly resource: T,
-    public returnedAt: number | undefined = undefined, // undefined - currently in use. Otherwise timestamp in ms.
-  ) {}
-}
 
 const isRoomForResource = (
   maxCount: number | undefined,
-  array: ReadonlyArray<ResourcePoolStateArrayItem<unknown>>,
+  array: ReadonlyArray<state.ResourcePoolStateArrayItem<unknown>>,
 ) =>
   maxCount === undefined ||
   array.length < maxCount ||
   getCurrentResourceCount(array) < maxCount;
 
+/**
+ * Gets the amount of resources (idle and acquired) of the pool.
+ * @param array The array from {@link state.ResourcePoolState#resources}.
+ * @returns The amount of resources (values other than `null`) in the given array.
+ */
 export const getCurrentResourceCount = (
-  array: ReadonlyArray<ResourcePoolStateArrayItem<unknown>>,
+  array: ReadonlyArray<state.ResourcePoolStateArrayItem<unknown>>,
 ) =>
   F.pipe(
     array,

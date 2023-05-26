@@ -1,11 +1,18 @@
+/**
+ * @file This file contains functionality to read JSON string, either directly as env variable, or if env variable looks like path, read the file contents from the path.
+ * The asynchronity is implemented using Tasks of the `fp-ts` library.
+ */
+
 import { either as E, taskEither as TE, function as F } from "fp-ts";
 import * as t from "io-ts";
 import * as fs from "fs/promises";
 
 /**
+ * Interprets the given string either as inline JSON or as file path, reads the file contents if it is the latter, and returns the JSON as `string`.
+ *
  * Notice that in order for `stringValue` to be recognized as file path, it must start with either `"."` or `"/"` character.
  * @param stringValue String value which will be interpreted as inline JSON or path to file containing JSON.
- * @returns A task which either contains error, or string.
+ * @returns A {@link TE.TaskEither} which either contains error, or JSON string.
  */
 export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilename = (
   stringValue: string,
@@ -28,6 +35,11 @@ export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilename = (
     ),
   );
 
+/**
+ * Helper function to invoke the {@link getJSONStringValueFromMaybeStringWhichIsJSONOrFilename}, and passing value of environment variable as input.
+ * @param envVarName The name of the environment variable.
+ * @returns A {@link TE.TaskEither} which either contains error, or JSON string.
+ */
 export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar =
   (envVarName: string) =>
   (maybeString: unknown): TE.TaskEither<Error, string> =>

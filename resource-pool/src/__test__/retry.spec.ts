@@ -1,7 +1,11 @@
+/**
+ * @file This file contains unit tests for functionality in file `../retry.ts`.
+ */
+
 import test from "ava";
 import { function as F, either as E, taskEither as TE } from "fp-ts";
 import * as spec from "../retry";
-import * as api from "../api";
+import type * as api from "../api.types";
 import * as errors from "../errors";
 
 test("Validate that retry works after one failed call", async (c) => {

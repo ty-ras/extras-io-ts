@@ -1,19 +1,14 @@
-export type {
-  DuplicateSQLParameterNameError,
-  InvalidSQLTemplateArgumentError,
-} from "./errors";
+/**
+ * @file This is entrypoint file for this package, exporting all non-internal files.
+ */
+
+export type * from "./errors";
 export {
   isDuplicateSQLParameterNameError,
   isInvalidSQLTemplateArgumentError,
 } from "./errors";
-export type { SQLParameter, SQLRaw } from "./parameters";
-export {
-  AnySQLParameter,
-  SQLTemplateParameter,
-  isRawSQL,
-  isSQLParameter,
-  parameter,
-  raw,
-} from "./parameters";
+export * from "./parameters";
 export * from "./input";
 export * from "./output";
+// Export only type information from parameters.internal.ts
+export type * from "./parameters.classes";

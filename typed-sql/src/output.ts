@@ -1,9 +1,17 @@
+/**
+ * @file This file contains code related to validating output of {@link input.SQLQueryExecutor}.
+ */
 /* eslint-disable @typescript-eslint/ban-types */
 import * as t from "io-ts";
 import { function as F, either as E, taskEither as TE } from "fp-ts";
-import type * as query from "./input";
+import type * as input from "./input";
 import * as errors from "./errors";
 
+/**
+ * Creates `io-ts` validator which ensures that input array of rows contains exactly one row with given shape.
+ * @param singleRow The `io-ts` validator for row object.
+ * @returns The `io-ts` validator which takes an array of rows as input, and ensures that array contains exactly one element. That element is then validated using given validator.
+ */
 export const one = <TValidation extends t.Mixed>(singleRow: TValidation) =>
   many(singleRow).pipe<
     t.TypeOf<TValidation>,
@@ -27,15 +35,25 @@ export const one = <TValidation extends t.Mixed>(singleRow: TValidation) =>
     ),
   );
 
+/**
+ * Creates `io-ts` validator which ensures that all rows of input array match given shape.
+ * @param singleRow The `io-ts` validator for row object.
+ * @returns The `io-ts` validator which takes an array of rows as input, and ensures that all array elements adher to given validator. The array length is not checked.
+ */
 export const many = <TValidation extends t.Mixed>(singleRow: TValidation) =>
   t.array(singleRow, "Rows");
 
+/**
+ * Creates callback to transform the input {@link input.SQLQueryExecutor} into another {@link input.SQLQueryExecutor}. This resulting executor will validate the return value of input executor using the given `io-ts` validation.
+ * @param validation The `io-ts` validation, typically obtained via {@link one} or {@link many}.
+ * @returns The callback which transforms the input {@link input.SQLQueryExecutor} into another {@link input.SQLQueryExecutor}. This resulting executor will validate the return value of input executor using the given `io-ts` validation.
+ */
 export const validateRows =
   <TValidation extends t.Mixed>(
     validation: TValidation,
   ): (<TClient, TParameters>(
-    executor: query.SQLQueryExecutor<TClient, TParameters, Array<unknown>>,
-  ) => query.SQLQueryExecutor<TClient, TParameters, t.TypeOf<TValidation>>) =>
+    executor: input.SQLQueryExecutor<TClient, TParameters, Array<unknown>>,
+  ) => input.SQLQueryExecutor<TClient, TParameters, t.TypeOf<TValidation>>) =>
   (executor) => {
     function retVal(parameters: ParametersOf<typeof executor>) {
       return (client: ClientOf<typeof executor>) =>
@@ -58,8 +76,8 @@ export const validateRows =
   };
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-type ParametersOf<TExecutor extends query.SQLQueryExecutor<any, any, any>> =
-  TExecutor extends query.SQLQueryExecutor<
+type ParametersOf<TExecutor extends input.SQLQueryExecutor<any, any, any>> =
+  TExecutor extends input.SQLQueryExecutor<
     infer _1,
     infer TParameters,
     infer _2
@@ -67,7 +85,7 @@ type ParametersOf<TExecutor extends query.SQLQueryExecutor<any, any, any>> =
     ? TParameters
     : never;
 
-type ClientOf<TExecutor extends query.SQLQueryExecutor<any, any, any>> =
-  TExecutor extends query.SQLQueryExecutor<infer TClient, infer _1, infer _2>
+type ClientOf<TExecutor extends input.SQLQueryExecutor<any, any, any>> =
+  TExecutor extends input.SQLQueryExecutor<infer TClient, infer _1, infer _2>
     ? TClient
     : never;

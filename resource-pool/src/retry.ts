@@ -1,12 +1,19 @@
+/**
+ * @file This file contains logic related to retry functionality when acquiring resources from the resource pool.
+ */
+
 import { function as F, either as E, taskEither as TE } from "fp-ts";
-import * as api from "./api";
+import type * as api from "./api.types";
 import * as errors from "./errors";
 
 /**
+ * Creates new callback which will augment the resource pools it receives with retry functionality, parametrized by given input.
+ *
  * If `retryFunctionality` is of type {@link StaticRetryFunctionality}, and its `retryCount` property is `0` or less, then the returned function will be a no-op.
  * And if the `waitBeforeRetryMs` property is `0` or less, there will be no waiting, but retry logic will commence immediately.
  * @param retryFunctionality The retry logic, either as static object, or as a callback.
  * @returns A callback which can be used to augment any {@link api.ResourcePool} with retry logic.
+ * @see RetryFunctionality
  * @see StaticRetryFunctionality
  * @see DynamicRetryFunctionality
  */
@@ -26,15 +33,31 @@ export const augmentWithRetry =
       : pool;
   };
 
+/**
+ * Checks whether given {@link api.ResourcePool} has already been augmented with retry functionality using {@link augmentWithRetry}.
+ * @param pool The given {@link api.ResourcePool}
+ * @returns `true` if the given pool has already been augmented with retry functionality, `false` otherwise.
+ */
 export const poolIsWithRetryFunctionality = <TResource, TAcquireParameters>(
   pool: api.ResourcePool<TResource, TAcquireParameters>,
 ) => pool instanceof PoolWithRetryFunctionality;
 
+/**
+ * The input for {@link augmentWithRetry}.
+ * @see StaticRetryFunctionality
+ * @see DynamicRetryFunctionality
+ */
 export type RetryFunctionality =
   | StaticRetryFunctionality
   | DynamicRetryFunctionality;
 
+/**
+ * The information required by retry functionality.
+ */
 export interface RetryParameters {
+  /**
+   * How long to wait before attempting to acquire again.
+   */
   waitBeforeRetryMs: number;
 }
 
@@ -54,7 +77,13 @@ export type DynamicRetryFunctionality = (
   args: DynamicRetryFunctionalityArgs,
 ) => RetryParameters | Error;
 
+/**
+ * The input for {@link DynamicRetryFunctionality}.
+ */
 export interface DynamicRetryFunctionalityArgs {
+  /**
+   * The error that occurred during call to {@link api.ResourcePool#acquire}.
+   */
   error: Error;
   /**
    * Notice! This count is 1-based!

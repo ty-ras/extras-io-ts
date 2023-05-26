@@ -1,6 +1,12 @@
+/**
+ * @file This file contains common functionality used by unit tests.
+ */
+
 import type * as input from "../input";
 import type * as parameters from "../parameters";
 import { either as E, taskEither as TE } from "fp-ts";
+
+/* eslint-disable jsdoc/require-jsdoc */
 
 export const createMockedClientProvider = (
   returnValues: ReadonlyArray<Array<unknown>>,

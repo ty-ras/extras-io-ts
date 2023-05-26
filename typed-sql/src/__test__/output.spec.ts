@@ -1,3 +1,7 @@
+/**
+ * @file This file contains unit tests for functionality in file `../output.ts`.
+ */
+
 import test, { ExecutionContext } from "ava";
 import * as spec from "../output";
 import * as input from "../input";

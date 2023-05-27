@@ -6,6 +6,9 @@ export type * from "./errors";
 export {
   isDuplicateSQLParameterNameError,
   isInvalidSQLTemplateArgumentError,
+  isSQLQueryInputValidationError,
+  isSQLQueryOutputValidationError,
+  isSQLQueryValidationError,
 } from "./errors";
 export * from "./parameters";
 export * from "./input";

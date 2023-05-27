@@ -1,7 +1,8 @@
 /**
  * @file This file contains internal types of the resource pool state.
  */
-import type * as common from "./common.types";
+
+import type * as api from "./api.types";
 
 /**
  * This interface contains properties of the internal state of {@link api.ResourcePool}.
@@ -26,7 +27,7 @@ export interface ResourcePoolState<T> {
   /**
    * The callback to check for equality of the resources.
    */
-  equality: common.Equality<T>;
+  equality: api.Equality<T>;
 }
 
 /**

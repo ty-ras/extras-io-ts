@@ -10,7 +10,7 @@ import * as spec from "../maybe-file";
 const testPassThru = async (c: ExecutionContext, value: string) => {
   c.plan(1);
   c.deepEqual(
-    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilename(value)(),
+    await spec.getJSONStringValueFromStringWhichIsJSONOrFilename(value)(),
     E.right(value),
   );
 };
@@ -28,7 +28,7 @@ test("Validate that passThru works for '{}'", testPassThru, "{}");
 const testFile = async (c: ExecutionContext, path: string) => {
   c.plan(1);
   c.deepEqual(
-    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilename(path)(),
+    await spec.getJSONStringValueFromStringWhichIsJSONOrFilename(path)(),
     E.right(await fs.readFile(path, "utf-8")),
   );
 };
@@ -48,9 +48,7 @@ test(
 test("Validate that getJSONStringValueFromStringWhichIsJSONOrFilename detects incorrect input", async (c) => {
   c.plan(1);
   c.deepEqual(
-    await spec.getJSONStringValueFromMaybeStringWhichIsJSONOrFilename(
-      "garbage",
-    )(),
+    await spec.getJSONStringValueFromStringWhichIsJSONOrFilename("garbage")(),
     E.left(
       new Error(
         'The env variable string must start with one of the following: "^\\s*(\\{|\\[|"|t|f|\\d|-|n)",".","/".',

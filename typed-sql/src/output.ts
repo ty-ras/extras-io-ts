@@ -1,6 +1,7 @@
 /**
  * @file This file contains code related to validating output of {@link input.SQLQueryExecutor}.
  */
+
 /* eslint-disable @typescript-eslint/ban-types */
 import * as t from "io-ts";
 import { function as F, either as E, taskEither as TE } from "fp-ts";

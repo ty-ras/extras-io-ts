@@ -148,7 +148,7 @@ export type SQLParameterReducer<
       [...Tail],
       Result &
         (Head extends classes.SQLParameter<infer TName, infer TValidation>
-          ? Record<TName, t.TypeOf<TValidation>>
+          ? { [P in TName]: t.TypeOf<TValidation> }
           : {})
     >
   : Readonly<Result>;
@@ -197,7 +197,8 @@ export type SQLQueryExecutor<TClient, TParameters, TReturnType> =
   SQLQueryExecutorFunction<TClient, TParameters, TReturnType> & WithSQLString;
 
 /**
- * This is type augmenting {@link SQLQueryExecutorFunction} with readonly SQL string
+ * This is type augmenting {@link SQLQueryExecutorFunction} with readonly SQL string property.
+ * The property can be used in e.g. unit tests to verify that produced SQL string is expected and makes sense.
  */
 export interface WithSQLString {
   /**

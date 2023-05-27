@@ -1,5 +1,5 @@
 /**
- * @file This file contains constants used by types in file `./spec.ts`.
+ * @file This file contains constants used by types in file `./spec.types.ts`.
  */
 
 export const MATCH_EXACT = "exact";

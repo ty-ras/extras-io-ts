@@ -1,6 +1,7 @@
 /**
  * @file This file contains internal code related to functionality of resource pools.
  */
+
 import {
   function as F,
   option as O,
@@ -22,7 +23,7 @@ import * as state from "./state";
 export const createAcquire =
   <TResource>(
     poolState: state.ResourcePoolState<TResource>,
-    create: ResourceCreateTask<TResource>,
+    create: api.ResourceCreateTask<TResource>,
   ): api.ResourceAcquire<TResource, void> =>
   () =>
     F.pipe(
@@ -124,11 +125,6 @@ export const createRelease =
       // Map success (resource) to void
       TE.map(() => {}),
     );
-
-/**
- * The callback for creating the resource using {@link TE.TaskEither}.
- */
-export type ResourceCreateTask<T> = () => TE.TaskEither<Error, T>;
 
 const isRoomForResource = (
   maxCount: number | undefined,

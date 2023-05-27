@@ -8,7 +8,6 @@ import {
   readonlyArray as RA,
   either as E,
   task as T,
-  type taskEither as TE,
 } from "fp-ts";
 import type * as api from "./api.types";
 import * as state from "./state";
@@ -23,7 +22,7 @@ import * as state from "./state";
 export const createRunEviction =
   <TResource>(
     poolState: state.ResourcePoolState<TResource>,
-    destroy: ResourceDestroyTask<TResource>,
+    destroy: api.ResourceDestroyTask<TResource>,
   ): api.ResourcePoolAdministration<TResource>["runEviction"] =>
   (resourceIdleTime) => {
     const shouldEvict: api.ResourceIdleTimeCustomizationFunction<TResource> =
@@ -76,10 +75,3 @@ interface EvictReduceState<T> {
   toBeEvicted: Array<T>;
   toBeRetained: Array<state.Resource<T> | undefined>;
 }
-
-/**
- * The callback for destroying the resource using {@link TE.TaskEither}.
- */
-export type ResourceDestroyTask<T> = (
-  resource: T,
-) => TE.TaskEither<Error, void>;

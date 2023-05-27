@@ -7,7 +7,6 @@ import type * as api from "./api.types";
 import * as pool from "./pool";
 import * as admin from "./administration";
 import * as retry from "./retry";
-import type * as common from "./common.types";
 import type * as state from "./state";
 
 /**
@@ -41,8 +40,8 @@ export const createSimpleResourcePool = <T>({
 export const createSimpleResourcePoolFromTasks = <T>(
   opts: ResourcePoolCreationOptions<
     T,
-    pool.ResourceCreateTask<T>,
-    admin.ResourceDestroyTask<T>
+    api.ResourceCreateTask<T>,
+    api.ResourceDestroyTask<T>
   >,
 ) => _createResourcePool(Object.assign({}, defaultOptions, opts));
 
@@ -76,7 +75,7 @@ export interface ResourcePoolCreationOptions<T, TCreate, TDestroy> {
   /**
    * The optional custom callback to check for resource equality, if using `===` is not sufficient.
    */
-  equality?: common.Equality<T>;
+  equality?: api.Equality<T>;
 
   /**
    * The optional {@link retry.RetryFunctionality} to use.
@@ -166,6 +165,6 @@ const defaultOptions = {
 type InternalResourcePoolOptions<T> = typeof defaultOptions &
   ResourcePoolCreationOptions<
     T,
-    pool.ResourceCreateTask<T>,
-    admin.ResourceDestroyTask<T>
+    api.ResourceCreateTask<T>,
+    api.ResourceDestroyTask<T>
   >;

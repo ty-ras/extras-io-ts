@@ -2,7 +2,7 @@
  * @file This types-only file contains type definitions of resource pools and how to use and administer them.
  */
 
-import type { task as T, taskEither as TE } from "fp-ts";
+import type { task as T, taskEither as TE, eq as EQ } from "fp-ts";
 
 /**
  * This interface contains necessary functions related to administration of one resource pool.
@@ -135,3 +135,20 @@ export interface EvictionResult {
    */
   errors: ReadonlyArray<Error>;
 }
+
+/**
+ * The callback for creating the resource using {@link TE.TaskEither}.
+ */
+export type ResourceCreateTask<T> = () => TE.TaskEither<Error, T>;
+
+/**
+ * The callback for destroying the resource using {@link TE.TaskEither}.
+ */
+export type ResourceDestroyTask<T> = (
+  resource: T,
+) => TE.TaskEither<Error, void>;
+
+/**
+ * This is callback type to check for equality of two resources.
+ */
+export type Equality<T> = EQ.Eq<T>["equals"];

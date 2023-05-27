@@ -14,7 +14,7 @@ import * as fs from "fs/promises";
  * @param stringValue String value which will be interpreted as inline JSON or path to file containing JSON.
  * @returns A {@link TE.TaskEither} which either contains error, or JSON string.
  */
-export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilename = (
+export const getJSONStringValueFromStringWhichIsJSONOrFilename = (
   stringValue: string,
 ): TE.TaskEither<Error, string> =>
   F.pipe(
@@ -52,7 +52,7 @@ export const getJSONStringValueFromMaybeStringWhichIsJSONOrFilenameFromEnvVar =
             `The "${envVarName}" env variable must contain non-empty string.`,
           ),
       ),
-      E.map(getJSONStringValueFromMaybeStringWhichIsJSONOrFilename),
+      E.map(getJSONStringValueFromStringWhichIsJSONOrFilename),
       TE.fromEither,
       TE.flatten,
     );
